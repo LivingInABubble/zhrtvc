@@ -26,6 +26,8 @@ sudo docker run -it -v [current absulte dir path]:/home/zhrtvc ubuntu/zhrtvc
 
 ### 安装依赖环境
 
+建议用python3.7的环境，requirements.txt所列依赖支持于python3.7环境。
+
 建议用zhrtvc/makefile.py来安装依赖包，如果有依赖包没有成功安装，再单独处理不能成功安装的依赖包。
 
 执行：
@@ -35,6 +37,9 @@ python makefile.py
 
 或者：
 python makefile.py [requirement.txt的路径]
+
+注意：默认安装CPU版本torch：
+pip install torch==1.7.0+cpu torchvision==0.8.0 torchaudio==0.7.0 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
 注意：
@@ -267,4 +272,4 @@ SV2TTS is a three-stage deep learning framework that allows to create a numerica
 
 ## 版本记录
 
-### v1.2.6
+### v1.4.23
