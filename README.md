@@ -10,6 +10,19 @@ tips: 中文或汉语的语言缩写简称是**zh**。
 ![啊啦嘻哈](data/files/alaxiha.jpg "啊啦嘻哈")
 
 
+### 语音合成工具箱
++ 便携使用的语音合成工具箱[ttskit](https://github.com/KuangDD/ttskit)
++ ttskit基于本项目[zhrtvc](https://github.com/KuangDD/zhrtvc)，侧重于语音合成的使用。
++ 快速使用：
+```python
+# 安装：pip install ttskit
+
+import ttskit
+
+# 合成语音
+ttskit.tts('这是个样例', audio='1')
+```
+
 ### 版本
 
 v1.4.23
