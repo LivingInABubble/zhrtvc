@@ -11,21 +11,43 @@ tips: 中文或汉语的语言缩写简称是**zh**。
 
 
 ### 语音合成工具箱
-+ 便携使用的语音合成工具箱[ttskit](https://github.com/KuangDD/ttskit)
-+ ttskit基于本项目[zhrtvc](https://github.com/KuangDD/zhrtvc)，侧重于语音合成的使用。
++ 便携使用的[ttskit](https://github.com/KuangDD/ttskit)语音合成工具箱。
++ 项目ttskit基于本项目[zhrtvc](https://github.com/KuangDD/zhrtvc)构建，侧重于语音合成的使用。
++ 安装：
+```
+pip install -U ttskit
+```
+
 + 快速使用：
 ```python
-# 安装：pip install ttskit
-
 import ttskit
 
 # 合成语音
 ttskit.tts('这是个样例', audio='1')
 ```
 
++ 命令行：
+```
+tkcli
+
+usage: tkcli [-h] [-i INTERACTION] [-t TEXT] [-s SPEAKER] [-a AUDIO]
+             [-o OUTPUT] [-m MELLOTRON_PATH] [-w WAVEGLOW_PATH] [-g GE2E_PATH]
+             [--mellotron_hparams_path MELLOTRON_HPARAMS_PATH]
+             [--waveglow_kwargs_json WAVEGLOW_KWARGS_JSON]
+```
+
++ 构建服务：
+```python
+from ttskit import web_api
+
+web_api.app.run(host='0.0.0.0', port=2718, debug=False)
+# 用POST或GET方法请求：http://localhost:2718/tts，传入参数text、audio、speaker。
+# 例如GET方法请求：http://localhost:2718/tts?text=这是个例子&audio=2
+```
+
 ### 版本
 
-v1.4.23
+v1.4.26
 
 使用说明和注意事项详见[README](zhrtvc/README.md)
 

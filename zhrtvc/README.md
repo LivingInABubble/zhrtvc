@@ -93,7 +93,7 @@ aishell/S0093/BAC009S0093W0368.mp3  有 着 对 美 和 品质 感 执着 的 �
 ```
 执行：
 
-python mellotron_train.py
+python trainer/mellotron_train.py
 
 说明：
 
@@ -135,7 +135,7 @@ optional arguments:
 
 ```markdown
 执行：
-python mellotron_inference.py
+python trainer/mellotron_inference.py
 
 说明：
 usage: mellotron_inference.py [-h] [-m CHECKPOINT_PATH]
@@ -187,7 +187,7 @@ optional arguments:
 
 ```
 执行：
-python waveglow_train.py
+python trainer/waveglow_train.py
 
 说明：
 usage: waveglow_train.py [-h] [-c CONFIG] [-r RANK] [-g GROUP_NAME]
@@ -207,7 +207,7 @@ optional arguments:
 #### 3. 应用waveglow模型。
 ```
 执行：
-python waveglow_inference.py
+python trainer/waveglow_inference.py
 
 说明：
 usage: waveglow_train.py [-h] [-c CONFIG] [-r RANK] [-g GROUP_NAME]
@@ -269,7 +269,3 @@ SV2TTS is a three-stage deep learning framework that allows to create a numerica
 - [**Training models yourself**](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/Training)
 - **Training with other data/languages** (coming soon! - see [here](https://github.com/CorentinJ/Real-Time-Voice-Cloning/issues/30#issuecomment-507864097) for now)
 - [**TODO and planned features**](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/TODO-&-planned-features) 
-
-## 版本记录
-
-### v1.4.23

@@ -1,3 +1,12 @@
+from pathlib import Path
+import logging
+import sys
+import os
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(Path(__file__).stem)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from encoder.preprocess import preprocess_librispeech, preprocess_voxceleb1, preprocess_voxceleb2
 from utils.argutils import print_args
 from pathlib import Path
