@@ -11,8 +11,8 @@ tips: 中文或汉语的语言缩写简称是**zh**。
 
 
 ### 语音合成工具箱
-+ 该项目的语音合成体验和模型推理建议使用[ttskit](https://github.com/KuangDD/ttskit)语音合成工具箱。
-+ 便携使用的[ttskit](https://github.com/KuangDD/ttskit)语音合成工具箱，专注于语音合成应用和部署。
++ 该项目的语音合成体验和模型推理建议使用[ttskit语音合成工具箱](https://github.com/KuangDD/ttskit)。
++ 便携使用的[ttskit语音合成工具箱](https://github.com/KuangDD/ttskit)，专注于语音合成应用和部署。
 + 项目ttskit基于本项目[zhrtvc](https://github.com/KuangDD/zhrtvc)构建，侧重于语音合成的使用。
 + 安装：
 ```
