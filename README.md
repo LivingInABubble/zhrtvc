@@ -11,7 +11,8 @@ tips: 中文或汉语的语言缩写简称是**zh**。
 
 
 ### 语音合成工具箱
-+ 便携使用的[ttskit](https://github.com/KuangDD/ttskit)语音合成工具箱。
++ 该项目的语音合成体验和模型推理建议使用[ttskit](https://github.com/KuangDD/ttskit)语音合成工具箱。
++ 便携使用的[ttskit](https://github.com/KuangDD/ttskit)语音合成工具箱，专注于语音合成应用和部署。
 + 项目ttskit基于本项目[zhrtvc](https://github.com/KuangDD/zhrtvc)构建，侧重于语音合成的使用。
 + 安装：
 ```
@@ -23,7 +24,34 @@ pip install -U ttskit
 import ttskit
 
 # 合成语音
-ttskit.tts('这是个样例', audio='1')
+ttskit.tts('这是个样例', audio='24')
+```
+
++ 网页界面：
+
+![index](https://github.com/KuangDD/ttskit/blob/main/ttskit/templates/index.png "index")
+
+
+```python
+# 执行python函数部署
+from ttskit import http_server
+
+http_server.start_sever()
+# 打开网页：http://localhost:9000/ttskit
+```
+
+```
+# 安装ttskit后，命令行部署网页界面
+
+tkhttp
+
+usage: tkhttp [-h] [--device DEVICE] [--host HOST] [--port PORT]
+
+optional arguments:
+  -h, --help       show this help message and exit
+  --device DEVICE  设置预测时使用的显卡,使用CPU设置成-1即可
+  --host HOST      IP地址
+  --port PORT      端口号
 ```
 
 + 命令行：
@@ -36,18 +64,10 @@ usage: tkcli [-h] [-i INTERACTION] [-t TEXT] [-s SPEAKER] [-a AUDIO]
              [--waveglow_kwargs_json WAVEGLOW_KWARGS_JSON]
 ```
 
-+ 构建服务：
-```python
-from ttskit import web_api
-
-web_api.app.run(host='0.0.0.0', port=2718, debug=False)
-# 用POST或GET方法请求：http://localhost:2718/tts，传入参数text、audio、speaker。
-# 例如GET方法请求：http://localhost:2718/tts?text=这是个例子&audio=2
-```
 
 ### 版本
 
-v1.4.26
+v1.5.6
 
 使用说明和注意事项详见[README](zhrtvc/README.md)
 

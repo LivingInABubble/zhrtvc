@@ -26,7 +26,7 @@ def create_hparams(hparams_string=None, verbose=False, level=2):
         ################################
         # Data Parameters             #
         ################################
-        train_mode='train-mspk',
+        train_mode='train-rtvc',
         # f01:用基频，prenet_f0_dim=1。
         # f02:用基频均值填充，prenet_f0_dim=1。
         # f03:用零向量代替基频，prenet_f0_dim=1。
@@ -103,7 +103,7 @@ def create_hparams(hparams_string=None, verbose=False, level=2):
         postnet_n_convolutions=5,
 
         # Speaker embedding
-        n_speakers=32,  # 1000,  # 123
+        n_speakers=256,  # rtvc:256,mspk:32
         speaker_embedding_dim=32,  # 16 * level,  # 32 * level,  # 128,
 
         # Reference encoder
