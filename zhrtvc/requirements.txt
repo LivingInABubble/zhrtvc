@@ -13,7 +13,7 @@ sounddevice==0.4.1
 aukit==1.4.4
 cycler==0.10.0
 music21==6.1.0
-tensorflow==1.15.2
+tensorflow==2.5.0
 pandas==0.25.1
 inflect==4.1.0
 matplotlib==3.1.1

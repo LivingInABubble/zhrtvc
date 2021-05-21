@@ -16,7 +16,7 @@ setproctitle
 SIP
 sounddevice
 tensorboardX
-tensorflow<=1.15.2
+tensorflow<2.5.1
 torch>=1.6.0
 tqdm
 umap_learn
