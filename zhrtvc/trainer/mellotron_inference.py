@@ -5,43 +5,51 @@
 """
 mellotron_inference
 """
-from pathlib import Path
+import json
 import logging
-import sys
 import os
+import re
+import sys
+from argparse import ArgumentParser
+from pathlib import Path
+from shutil import copyfile
+from time import strftime
+from traceback import print_exc
+
+import matplotlib.pyplot as plt
+import torch
+import yaml
+from aukit import save_wav, play_audio
+from numpy.random import choice
+from tqdm import tqdm
+from unidecode import unidecode
+
+from mellotron.inference import MellotronSynthesizer
+from mellotron.inference import save_model
+from utils.argutils import locals2dict
+from utils.texthelper import xinqing_texts
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(Path(__file__).stem)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import argparse
-import os
-
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument('-m', '--checkpoint_path', type=str,
                         default=r"../models/mellotron/samples/checkpoint/mellotron-000000.pt",
                         help='模型路径。')
-    parser.add_argument('--is_simple', type=int, default=1,
-                        help='是否简易模式。')
-    parser.add_argument('-s', '--speaker_path', type=str,
-                        default=r"../models/mellotron/samples/metadata/speakers.json",
+    parser.add_argument('--is_simple', type=int, default=1, help='是否简易模式。')
+    parser.add_argument('-s', '--speaker_path', type=str, default=r"../models/mellotron/samples/metadata/speakers.json",
                         help='发音人映射表路径。')
-    parser.add_argument('-a', '--audio_path', type=str,
-                        default=r"../data/samples/wav",
-                        help='参考音频路径。')
-    parser.add_argument('-t', '--text_path', type=str,
-                        default=r"../models/mellotron/samples/metadata/validation.txt",
+    parser.add_argument('-a', '--audio_path', type=str, default=r"../data/samples/wav", help='参考音频路径。')
+    parser.add_argument('-t', '--text_path', type=str, default=r"../models/mellotron/samples/metadata/validation.txt",
                         help='文本路径。')
     parser.add_argument("-o", "--out_dir", type=Path, default=r"../models/mellotron/samples/test/mellotron-000000",
                         help='保存合成的数据路径。')
-    parser.add_argument("-p", "--play", type=int, default=0,
-                        help='是否合成语音后自动播放语音。')
-    parser.add_argument('--n_gpus', type=int, default=1,
-                        required=False, help='number of gpus')
-    parser.add_argument('--hparams_path', type=str,
-                        default=r"../models/mellotron/samples/metadata/hparams.json",
+    parser.add_argument("-p", "--play", type=int, default=0, help='是否合成语音后自动播放语音。')
+    parser.add_argument('--n_gpus', type=int, default=1, required=False, help='number of gpus')
+    parser.add_argument('--hparams_path', type=str, default=r"../models/mellotron/samples/metadata/hparams.json",
                         required=False, help='comma separated name=value pairs')
     parser.add_argument("-e", "--encoder_model_fpath", type=Path,
                         default=r"../models/encoder/saved_models/ge2e_pretrained.pt",
@@ -49,33 +57,14 @@ def parse_args():
     parser.add_argument("--save_model_path", type=str,
                         default=r"../models/mellotron/samples/mellotron-000000.samples.pt",
                         help='保存模型为可以直接torch.load的格式')
-    parser.add_argument("--cuda", type=str, default='-1',
-                        help='设置CUDA_VISIBLE_DEVICES')
-    args = parser.parse_args()
-    return args
+    parser.add_argument("--cuda", type=str, default='-1', help='设置CUDA_VISIBLE_DEVICES')
+
+    return parser.parse_args()
 
 
 args = parse_args()
 
 os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
-
-import matplotlib.pyplot as plt
-import aukit
-import time
-import json
-import traceback
-import torch
-import numpy as np
-import shutil
-import re
-import yaml
-import unidecode
-from tqdm import tqdm
-
-from mellotron.inference import MellotronSynthesizer
-from mellotron.inference import save_model
-from utils.texthelper import xinqing_texts
-from utils.argutils import locals2dict
 
 filename_formatter_re = re.compile(r'[\s\\/:*?"<>|\']+')
 
@@ -88,6 +77,7 @@ def convert_input(text):
         text_inputs = [str(w) for w in sorted(fpath.glob('**/*')) if w.is_file()]
     else:
         text_inputs = [text]
+
     return text_inputs
 
 
@@ -116,7 +106,7 @@ if __name__ == "__main__":
     # model_path = args.checkpoint_path
     # load_model_mellotron(model_path, hparams=_hparams)
 
-    ## Print some environment information (for debugging purposes)
+    # Print some environment information (for debugging purposes)
     print("Running a test of your configuration...\n")
     if torch.cuda.is_available():
         device_id = torch.cuda.current_device()
@@ -169,14 +159,13 @@ if __name__ == "__main__":
         example_text_list = xinqing_texts
         example_speaker_list = speaker_name_list
 
-    example_audio_list = np.random.choice(example_audio_list, 10)
-    example_text_list = np.random.choice(example_text_list, 10)
-    example_speaker_list = np.random.choice(example_speaker_list, 10)
+    example_audio_list = choice(example_audio_list, 10)
+    example_text_list = choice(example_text_list, 10)
+    example_speaker_list = choice(example_speaker_list, 10)
 
     spec = msyner.synthesize(text='你好，欢迎使用语言合成服务。', speaker=speaker_name_list[0], audio=example_audio_list[0])
 
-    ## Run a test
-
+    # Run a test
     print("Spectrogram shape: {}".format(spec.shape))
     # print("Alignment shape: {}".format(align.shape))
     wav_inputs = msyner.stft.griffin_lim(torch.from_numpy(spec[None]))
@@ -193,24 +182,24 @@ if __name__ == "__main__":
     #     try:
     #         speaker = input("Speaker:\n")
     #         if not speaker.strip():
-    #             speaker = np.random.choice(speaker_names)
+    #             speaker = choice(speaker_names)
     #         print('Speaker: {}'.format(speaker))
     #
     #         text = input("Text:\n")
     #         if not text.strip():
-    #             text = np.random.choice(example_texts)
+    #             text = choice(example_texts)
     #         print('Text: {}'.format(text))
     #
     #         audio = input("Audio:\n")
     #         if not audio.strip():
-    #             audio = np.random.choice(example_fpaths)
+    #             audio = choice(example_fpaths)
     #         print('Audio: {}'.format(audio))
     # fixme batch的形式合成
     mels, mels_postnet, gates, alignments = msyner.synthesize_batch()
     texts = msyner.texts
+    # for num, (text, speaker, audio) in enumerate(
+    #         tqdm(zip(example_text_list, example_speaker_list, example_audio_list), 'mellotron-inference', ncols=100)):
     for num in tqdm(list(range(len(mels_postnet))), 'griffinlim', ncols=100):
-    # for num, (text, speaker, audio) in enumerate(tqdm(zip(example_text_list, example_speaker_list, example_audio_list),
-    #                                                   'mellotron-inference', ncols=100)):
         try:
             spec, align, gate = mels_postnet[num], alignments[num], gates[num]
             audio, text, speaker = texts[num].split('\t')
@@ -226,7 +215,7 @@ if __name__ == "__main__":
             # print("Spectrogram shape: {}".format(spec.shape))
             # print("Alignment shape: {}".format(align.shape))
 
-            ## Generating the waveform
+            # # Generating the waveform
             # print("Synthesizing the waveform ...")
 
             wav_outputs = msyner.stft.griffin_lim(torch.from_numpy(spec[None]), n_iters=5)
@@ -235,14 +224,14 @@ if __name__ == "__main__":
             # print("Waveform shape: {}".format(wav.shape))
 
             # Save it on the disk
-            cur_text = filename_formatter_re.sub('', unidecode.unidecode(text))[:15]
-            cur_time = time.strftime('%Y%m%d-%H%M%S')
+            cur_text = filename_formatter_re.sub('', unidecode(text))[:15]
+            cur_time = strftime('%Y%m%d-%H%M%S')
             out_path = out_dir.joinpath("demo_{}_{}_out.wav".format(cur_time, cur_text))
-            aukit.save_wav(wav_output, out_path, sr=msyner.stft.sampling_rate)  # save
+            save_wav(wav_output, out_path, sr=msyner.stft.sampling_rate)  # save
 
             if isinstance(audio, (Path, str)) and Path(audio).is_file():
                 ref_path = out_dir.joinpath("demo_{}_{}_ref.wav".format(cur_time, cur_text))
-                shutil.copyfile(audio, ref_path)
+                copyfile(audio, ref_path)
 
             fig_path = out_dir.joinpath("demo_{}_{}_fig.jpg".format(cur_time, cur_text))
             plot_mel_alignment_gate_audio(spec, align, gate, wav[::msyner.stft.sampling_rate // 1000])
@@ -261,8 +250,8 @@ if __name__ == "__main__":
             num_generated += 1
             # print("\nSaved output as %s\n\n" % out_path)
             if args.play:
-                aukit.play_audio(out_path, sr=msyner.stft.sampling_rate)
+                play_audio(out_path, sr=msyner.stft.sampling_rate)
         except Exception as e:
             print("Caught exception: %s" % repr(e))
             print("Restarting\n")
-            traceback.print_exc()
+            print_exc()

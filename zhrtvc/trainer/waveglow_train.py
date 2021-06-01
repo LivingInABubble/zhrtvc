@@ -5,39 +5,37 @@
 """
 waveglow_train
 """
-from pathlib import Path
+import json
 import logging
-import sys
 import os
+import sys
+from argparse import ArgumentParser
+from pathlib import Path
+from shutil import copyfile
+
+import torch
+
+from waveglow.train import train
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(Path(__file__).stem)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import argparse
-import shutil
-
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default='./waveglow/config.json',
                         help='JSON file for configuration')
-    parser.add_argument('-r', '--rank', type=int, default=0,
-                        help='rank of process for distributed')
-    parser.add_argument('-g', '--group_name', type=str, default='',
-                        help='name of group for distributed')
+    parser.add_argument('-r', '--rank', type=int, default=0, help='rank of process for distributed')
+    parser.add_argument('-g', '--group_name', type=str, default='', help='name of group for distributed')
     parser.add_argument("--cuda", type=str, default='0', help='Set CUDA_VISIBLE_DEVICES')
-    args = parser.parse_args()
-    return args
+
+    return parser.parse_args()
 
 
 args = parse_args()
 
 os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
-
-import json
-import torch
-from waveglow.train import train
 
 if __name__ == "__main__":
     try:
@@ -62,8 +60,8 @@ if __name__ == "__main__":
     metadata_dir = Path(train_config["output_directory"]).parent.joinpath('metadata')
     metadata_dir.mkdir(exist_ok=True, parents=True)
 
-    shutil.copyfile(args.config, metadata_dir.joinpath('config.json'))
-    # shutil.copyfile(data_config['training_files'], metadata_dir.joinpath('train.txt'))
+    copyfile(args.config, metadata_dir.joinpath('config.json'))
+    # copyfile(data_config['training_files'], metadata_dir.joinpath('train.txt'))
 
     num_gpus = torch.cuda.device_count()
     if num_gpus > 1:

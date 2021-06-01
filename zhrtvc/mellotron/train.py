@@ -52,6 +52,7 @@ def reduce_tensor(tensor, n_gpus):
     rt = tensor.clone()
     dist.all_reduce(rt, op=dist.ReduceOp.SUM)
     rt /= n_gpus
+
     return rt
 
 
@@ -63,9 +64,8 @@ def init_distributed(hparams, n_gpus, rank, group_name):
     torch.cuda.set_device(rank % torch.cuda.device_count())
 
     # Initialize distributed communication
-    dist.init_process_group(
-        backend=hparams.dist_backend, init_method=hparams.dist_url,
-        world_size=n_gpus, rank=rank, group_name=group_name)
+    dist.init_process_group(backend=hparams.dist_backend, init_method=hparams.dist_url, world_size=n_gpus, rank=rank,
+                            group_name=group_name)
 
     print("Done initializing distributed")
 
@@ -85,8 +85,7 @@ def prepare_dataloaders(input_directory, hparams):
         shuffle = True
 
     train_loader = DataLoader(trainset, num_workers=hparams.dataloader_num_workers, shuffle=shuffle,
-                              sampler=train_sampler,
-                              batch_size=hparams.batch_size, pin_memory=False,
+                              sampler=train_sampler, batch_size=hparams.batch_size, pin_memory=False,
                               drop_last=True, collate_fn=collate_fn)
     return train_loader, valset, collate_fn, train_sampler
 
@@ -99,6 +98,7 @@ def prepare_directories_and_logger(output_directory, log_directory, rank, hparam
         logger = Tacotron2Logger(os.path.join(output_directory, log_directory), hparams=hparams)
     else:
         logger = None
+
     return logger
 
 
@@ -107,13 +107,14 @@ def warm_start_model(checkpoint_path, model, ignore_layers):
     print("Warm starting model from checkpoint '{}'".format(checkpoint_path))
     checkpoint_dict = torch.load(checkpoint_path, map_location='cpu')
     model_dict = checkpoint_dict['state_dict']
+
     if len(ignore_layers) > 0:
-        model_dict = {k: v for k, v in model_dict.items()
-                      if k not in ignore_layers}
+        model_dict = {k: v for k, v in model_dict.items() if k not in ignore_layers}
         dummy_dict = model.state_dict()
         dummy_dict.update(model_dict)
         model_dict = dummy_dict
     model.load_state_dict(model_dict)
+
     return model
 
 
@@ -125,8 +126,7 @@ def load_checkpoint(checkpoint_path, model, optimizer):
     optimizer.load_state_dict(checkpoint_dict['optimizer'])
     learning_rate = checkpoint_dict['learning_rate']
     iteration = checkpoint_dict['iteration']
-    print("Loaded checkpoint '{}' from iteration {}".format(
-        checkpoint_path, iteration))
+    print("Loaded checkpoint '{}' from iteration {}".format(checkpoint_path, iteration))
     return model, optimizer, learning_rate, iteration
 
 
@@ -243,16 +243,14 @@ def train(input_directory, output_directory, log_directory, checkpoint_path, war
 
     if hparams.fp16_run:
         from apex import amp
-        model, optimizer = amp.initialize(
-            model, optimizer, opt_level='O2')
+        model, optimizer = amp.initialize(model, optimizer, opt_level='O2')
 
     if hparams.distributed_run:
         model = apply_gradient_allreduce(model)
 
     criterion = Tacotron2Loss()
 
-    logger = prepare_directories_and_logger(
-        output_directory, log_directory, rank, hparams=hparams)
+    logger = prepare_directories_and_logger(output_directory, log_directory, rank, hparams=hparams)
 
     # 记录训练的元数据。
     meta_folder = os.path.join(output_directory, 'metadata')
@@ -263,15 +261,14 @@ def train(input_directory, output_directory, log_directory, checkpoint_path, war
     with open(trpath, 'wt', encoding='utf8') as fout_tr, open(vapath, 'wt', encoding='utf8') as fout_va:
         lines = open(input_directory, encoding='utf8').readlines()
         val_ids = set(np.random.choice(list(range(len(lines))), hparams.batch_size * 2, replace=False))
+
         for num, line in enumerate(lines):
             parts = line.strip().split('\t')
             abspath = os.path.join(os.path.dirname(os.path.abspath(input_directory)), parts[0]).replace('\\', '/')
             text = parts[1]
-            if len(parts) >= 3:
-                speaker = parts[2]
-            else:
-                speaker = '0'
+            speaker = parts[2] if len(parts) >= 3 else '0'
             out = f'{abspath}\t{text}\t{speaker}\n'
+
             if num in val_ids:
                 fout_va.write(out)
             else:
@@ -305,11 +302,9 @@ def train(input_directory, output_directory, log_directory, checkpoint_path, war
     epoch_offset = 0
     if checkpoint_path is not None:
         if warm_start:
-            model = warm_start_model(
-                checkpoint_path, model, hparams.ignore_layers)
+            model = warm_start_model(checkpoint_path, model, hparams.ignore_layers)
         else:
-            model, optimizer, _learning_rate, iteration = load_checkpoint(
-                checkpoint_path, model, optimizer)
+            model, optimizer, _learning_rate, iteration = load_checkpoint(checkpoint_path, model, optimizer)
             if hparams.use_saved_learning_rate:
                 learning_rate = _learning_rate
             iteration += 1  # next iteration is iteration + 1
@@ -327,11 +322,11 @@ def train(input_directory, output_directory, log_directory, checkpoint_path, war
         print("Epoch: {}".format(epoch))
         if train_sampler is not None:
             train_sampler.set_epoch(epoch)
+
         for i, batch in enumerate(tqdm(train_loader, desc=f"Epoch-{epoch}", ncols=100)):
             start = time.perf_counter()
             if iteration > 0 and iteration % hparams.learning_rate_anneal == 0:
-                learning_rate = max(
-                    hparams.learning_rate_min, learning_rate * 0.5)
+                learning_rate = max(hparams.learning_rate_min, learning_rate * 0.5)
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = learning_rate
 
@@ -352,18 +347,15 @@ def train(input_directory, output_directory, log_directory, checkpoint_path, war
                 loss.backward()
 
             if hparams.fp16_run:
-                grad_norm = torch.nn.utils.clip_grad_norm_(
-                    amp.master_params(optimizer), hparams.grad_clip_thresh)
+                grad_norm = torch.nn.utils.clip_grad_norm_(amp.master_params(optimizer), hparams.grad_clip_thresh)
                 is_overflow = math.isnan(grad_norm)
             else:
-                grad_norm = torch.nn.utils.clip_grad_norm_(
-                    model.parameters(), hparams.grad_clip_thresh)
+                grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), hparams.grad_clip_thresh)
 
             optimizer.step()
             duration = time.perf_counter() - start
             if not is_overflow and rank == 0:
-                logger.log_training(
-                    reduced_loss, grad_norm, learning_rate, duration, iteration)
+                logger.log_training(reduced_loss, grad_norm, learning_rate, duration, iteration)
 
             if not is_overflow and ((iteration % hparams.iters_per_checkpoint == 0) or (iteration == iteration_start)):
                 print("Train loss {} {:.6f} Grad Norm {:.6f} {:.2f}s/it".format(
