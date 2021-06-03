@@ -37,8 +37,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('-m', '--checkpoint_path', type=str,
-                        default=r"../models/mellotron/samples/checkpoint/mellotron-000000.pt",
-                        help='模型路径。')
+                        default=r"../models/mellotron/samples/checkpoint/mellotron-000000.pt", help='模型路径。')
     parser.add_argument('--is_simple', type=int, default=1, help='是否简易模式。')
     parser.add_argument('-s', '--speaker_path', type=str, default=r"../models/mellotron/samples/metadata/speakers.json",
                         help='发音人映射表路径。')
