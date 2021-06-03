@@ -24,48 +24,44 @@ from numpy.random import choice
 from tqdm import tqdm
 from unidecode import unidecode
 
-from mellotron.inference import MellotronSynthesizer
-from mellotron.inference import save_model
-from utils.argutils import locals2dict
-from utils.texthelper import xinqing_texts
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(Path(__file__).stem)
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 
 def parse_args():
     parser = ArgumentParser()
     parser.add_argument('-m', '--checkpoint_path', type=str,
-                        default=r"../models/mellotron/samples/checkpoint/mellotron-000000.pt", help='模型路径。')
+                        # default=r"../models/mellotron/samples/checkpoint/mellotron-000000.pt",
+                        default=r"../models/mellotron/kuangdd-rtvc/checkpoint/mellotron-400000.pt",
+                        # elp='模型路径。'
+                        )
     parser.add_argument('--is_simple', type=int, default=1, help='是否简易模式。')
-    parser.add_argument('-s', '--speaker_path', type=str, default=r"../models/mellotron/samples/metadata/speakers.json",
+    parser.add_argument('-s', '--speaker_path', type=str,
+                        # default=r"../models/mellotron/samples/metadata/speakers.json",
+                        default=r"../models/mellotron/kuangdd-rtvc/metadata/speakers.json",
                         help='发音人映射表路径。')
     parser.add_argument('-a', '--audio_path', type=str, default=r"../data/samples/wav", help='参考音频路径。')
-    parser.add_argument('-t', '--text_path', type=str, default=r"../models/mellotron/samples/metadata/validation.txt",
+    parser.add_argument('-t', '--text_path', type=str,
+                        # default=r"../models/mellotron/samples/metadata/validation.txt",
+                        default=r"../models/mellotron/kuangdd-rtvc/metadata/validation.txt",
                         help='文本路径。')
-    parser.add_argument("-o", "--out_dir", type=Path, default=r"../models/mellotron/samples/test/mellotron-000000",
+    parser.add_argument("-o", "--out_dir", type=Path,
+                        # default=r"../models/mellotron/samples/test/mellotron-000000",
+                        default=r"../models/mellotron/kuangdd-rtvc/test/mellotron-400000",
                         help='保存合成的数据路径。')
     parser.add_argument("-p", "--play", type=int, default=0, help='是否合成语音后自动播放语音。')
     parser.add_argument('--n_gpus', type=int, default=1, required=False, help='number of gpus')
-    parser.add_argument('--hparams_path', type=str, default=r"../models/mellotron/samples/metadata/hparams.json",
+    parser.add_argument('--hparams_path', type=str,
+                        # default=r"../models/mellotron/samples/metadata/hparams.json",
+                        default=r"../models/mellotron/kuangdd-rtvc/metadata/hparams.json",
                         required=False, help='comma separated name=value pairs')
     parser.add_argument("-e", "--encoder_model_fpath", type=Path,
                         default=r"../models/encoder/saved_models/ge2e_pretrained.pt",
                         help="Path your trained encoder model.")
     parser.add_argument("--save_model_path", type=str,
-                        default=r"../models/mellotron/samples/mellotron-000000.samples.pt",
+                        # default=r"../models/mellotron/samples/mellotron-000000.samples.pt",
+                        default=r"../models/mellotron/kuangdd-rtvc/mellotron-400000.samples.pt",
                         help='保存模型为可以直接torch.load的格式')
     parser.add_argument("--cuda", type=str, default='-1', help='设置CUDA_VISIBLE_DEVICES')
 
     return parser.parse_args()
-
-
-args = parse_args()
-
-os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
-
-filename_formatter_re = re.compile(r'[\s\\/:*?"<>|\']+')
 
 
 def convert_input(text):
@@ -98,7 +94,20 @@ def plot_mel_alignment_gate_audio(mel, alignment, gate, audio, figsize=(16, 16))
     plt.tight_layout()
 
 
-if __name__ == "__main__":
+def main():
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(Path(__file__).stem)
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    from mellotron.inference import MellotronSynthesizer
+    from mellotron.inference import save_model
+    from utils.argutils import locals2dict
+    from utils.texthelper import xinqing_texts
+
+    args = parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
+    filename_formatter_re = re.compile(r'[\s\\/:*?"<>|\']+')
+
     # args_hparams = open(args.hparams_path, encoding='utf8').read()
     # _hparams = create_hparams(args_hparams)
     #
@@ -254,3 +263,7 @@ if __name__ == "__main__":
             print("Caught exception: %s" % repr(e))
             print("Restarting\n")
             print_exc()
+
+
+if __name__ == '__main__':
+    main()

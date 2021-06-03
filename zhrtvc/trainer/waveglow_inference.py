@@ -19,10 +19,6 @@ from numpy.random import choice
 from scipy.io import wavfile
 from tqdm import tqdm
 
-from waveglow.inference import Denoiser
-# from mellotron.layers import TacotronSTFT
-from waveglow.mel2samp import MAX_WAV_VALUE, Mel2Samp, load_wav_to_torch
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(Path(__file__).stem)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -45,27 +41,28 @@ def parse_args():
     return parser.parse_args()
 
 
-args = parse_args()
-
-os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
-
-
 # 要把glow所在目录包含进来，否则导致glow缺失报错。
-def main(input_path, waveglow_path, config_path, output_path, save_model_path, is_simple=1, **kwargs):
+def inference(input_path, waveglow_path, config_path, output_path, save_model_path, is_simple=1, **kwargs):
+    from waveglow.inference import Denoiser
+    # from mellotron.layers import TacotronSTFT
+    from waveglow.mel2samp import MAX_WAV_VALUE, Mel2Samp, load_wav_to_torch
+
     denoiser_strength = kwargs.get('denoiser_strength', 0)
     sigma = kwargs.get('sigma', 1.0)
 
     waveglow = torch.load(waveglow_path)['model']
     waveglow = waveglow.remove_weightnorm(waveglow)
-    waveglow.cuda().eval()
+    # waveglow.cuda().eval()
     if save_model_path:
         torch.save(waveglow, save_model_path)
 
-    denoiser = Denoiser(waveglow).cuda()
+    # denoiser = Denoiser(waveglow).cuda()
+    denoiser = Denoiser(waveglow)
 
     # waveglow = torch.load('../waveglow_v5_model.pt', map_location='cuda')
     with open(config_path) as f:
         data = f.read()
+
     data_config = json.loads(data)["data_config"]
     mel2samp = Mel2Samp(**data_config)
 
@@ -88,6 +85,7 @@ def main(input_path, waveglow_path, config_path, output_path, save_model_path, i
         audio_name = f'waveglow_{cur_time}_{audio_path.name}'
         outpath = output_dir.joinpath(audio_name)
         name_cnt = 2
+
         while outpath.is_file():
             outpath = output_dir.joinpath(f'{audio_path.stem}-{name_cnt}{audio_path.suffix}')
             name_cnt += 1
@@ -104,7 +102,8 @@ def main(input_path, waveglow_path, config_path, output_path, save_model_path, i
 
         audio, sr = load_wav_to_torch(audio_path, sr_force=data_config['sampling_rate'])
         mel = mel2samp.get_mel(audio)
-        mel = torch.autograd.Variable(mel.cuda())
+        # mel = torch.autograd.Variable(mel.cuda())
+        mel = torch.autograd.Variable(mel)
         mel = torch.unsqueeze(mel, 0)
 
         with torch.no_grad():
@@ -120,8 +119,9 @@ def main(input_path, waveglow_path, config_path, output_path, save_model_path, i
         wavfile.write(outpath, data_config['sampling_rate'], audio)
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
 
     if args.is_simple:
         workdir = Path(args.waveglow_path).parent.parent
@@ -139,9 +139,13 @@ if __name__ == "__main__":
         save_model_path = args.save_model_path
 
     args_kwargs = json.loads(args.kwargs)
-    main(input_path=input_path,
-         waveglow_path=waveglow_path,
-         output_path=output_path,
-         config_path=config_path,
-         save_model_path=save_model_path,
-         **args_kwargs)
+    inference(input_path=input_path,
+              waveglow_path=waveglow_path,
+              output_path=output_path,
+              config_path=config_path,
+              save_model_path=save_model_path,
+              **args_kwargs)
+
+
+if __name__ == '__main__':
+    main()

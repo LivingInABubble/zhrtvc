@@ -2,17 +2,9 @@ import logging
 import os
 import sys
 from argparse import ArgumentParser
-from pathlib import Path
 
 import torch
 import yaml
-
-from mellotron.hparams import create_hparams
-from mellotron.train import train, json_dump, yaml_dump
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(Path(__file__).stem)
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def parse_args():
@@ -38,11 +30,18 @@ def parse_args():
     return parser.parse_args()
 
 
-args = parse_args()
+def main():
+    logging.basicConfig(level=logging.INFO)
+    # from pathlib import Path
+    # logger = logging.getLogger(Path(__file__).stem)
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
+    from mellotron.hparams import create_hparams
+    from mellotron.train import train, json_dump, yaml_dump
 
-if __name__ == '__main__':
+    args = parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
+
     try:
         from setproctitle import setproctitle
 
@@ -76,3 +75,7 @@ if __name__ == '__main__':
     print(yaml.dump({k: v for k, v in hparams.items()}))
 
     train(hparams=hparams, **args.__dict__)
+
+
+if __name__ == '__main__':
+    main()

@@ -15,12 +15,6 @@ from shutil import copyfile
 
 import torch
 
-from waveglow.train import train
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(Path(__file__).stem)
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 
 def parse_args():
     parser = ArgumentParser()
@@ -33,14 +27,18 @@ def parse_args():
     return parser.parse_args()
 
 
-args = parse_args()
+def main():
+    logging.basicConfig(level=logging.INFO)
+    # logger = logging.getLogger(Path(__file__).stem)
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
+    from waveglow.train import train
 
-if __name__ == "__main__":
+    args = parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
+
     try:
         from setproctitle import setproctitle
-
         setproctitle('zhrtvc-waveglow-train')
     except ImportError:
         pass
@@ -81,3 +79,7 @@ if __name__ == "__main__":
           data_config=data_config,
           train_config=train_config,
           **train_config)
+
+
+if __name__ == '__main__':
+    main()
