@@ -1,4 +1,4 @@
-# 中文语音克隆
+ 中文语音克隆
 
 ## 使用指引
 
@@ -106,13 +106,13 @@ usage: mellotron_train.py [-h] [-i INPUT_DIRECTORY] [-o OUTPUT_DIRECTORY]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -i INPUT_DIRECTORY, --input_directory INPUT_DIRECTORY
+  -i --input_directory INPUT_DIRECTORY
                         directory to save checkpoints
-  -o OUTPUT_DIRECTORY, --output_directory OUTPUT_DIRECTORY
+  -o --output_directory OUTPUT_DIRECTORY
                         directory to save checkpoints
-  -l LOG_DIRECTORY, --log_directory LOG_DIRECTORY
+  -l --log_directory LOG_DIRECTORY
                         directory to save tensorboard logs
-  -c CHECKPOINT_PATH, --checkpoint_path CHECKPOINT_PATH
+  -c --checkpoint_path CHECKPOINT_PATH
                         checkpoint path
   --warm_start          load model weights only, ignore specified layers
   --n_gpus N_GPUS       number of gpus
@@ -149,23 +149,23 @@ usage: mellotron_inference.py [-h] [-m CHECKPOINT_PATH]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -m CHECKPOINT_PATH, --checkpoint_path CHECKPOINT_PATH
+  -m --checkpoint_path CHECKPOINT_PATH
                         模型路径。
   --is_simple IS_SIMPLE
                         是否简易模式。
-  -s SPEAKER_PATH, --speaker_path SPEAKER_PATH
+  -s --speaker_path SPEAKER_PATH
                         发音人映射表路径。
-  -a AUDIO_PATH, --audio_path AUDIO_PATH
+  -a --audio_path AUDIO_PATH
                         参考音频路径。
-  -t TEXT_PATH, --text_path TEXT_PATH
+  -t --text_path TEXT_PATH
                         文本路径。
-  -o OUT_DIR, --out_dir OUT_DIR
+  -o --out_dir OUT_DIR
                         保存合成的数据路径。
-  -p PLAY, --play PLAY  是否合成语音后自动播放语音。
+  -p --play PLAY        是否合成语音后自动播放语音。
   --n_gpus N_GPUS       number of gpus
   --hparams_path HPARAMS_PATH
                         comma separated name=value pairs
-  -e ENCODER_MODEL_FPATH, --encoder_model_fpath ENCODER_MODEL_FPATH
+  -e --encoder_model_fpath ENCODER_MODEL_FPATH
                         Path your trained encoder model.
   --save_model_path SAVE_MODEL_PATH
                         保存模型为可以直接torch.load的格式
@@ -195,10 +195,9 @@ usage: waveglow_train.py [-h] [-c CONFIG] [-r RANK] [-g GROUP_NAME]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c CONFIG, --config CONFIG
-                        JSON file for configuration
-  -r RANK, --rank RANK  rank of process for distributed
-  -g GROUP_NAME, --group_name GROUP_NAME
+  -c --config CONFIG    JSON file for configuration
+  -r --rank RANK        rank of process for distributed
+  -g --group_name GROUP_NAME
                         name of group for distributed
   --cuda CUDA           Set CUDA_VISIBLE_DEVICES
 
@@ -210,19 +209,6 @@ optional arguments:
 python trainer/waveglow_inference.py
 
 说明：
-usage: waveglow_train.py [-h] [-c CONFIG] [-r RANK] [-g GROUP_NAME]
-                         [--cuda CUDA]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -c CONFIG, --config CONFIG
-                        JSON file for configuration
-  -r RANK, --rank RANK  rank of process for distributed
-  -g GROUP_NAME, --group_name GROUP_NAME
-                        name of group for distributed
-  --cuda CUDA           Set CUDA_VISIBLE_DEVICES
-
-(base) E:\github-kuangdd\zhrtvc\zhrtvc>python waveglow_inference.py --help
 usage: waveglow_inference.py [-h] [-w WAVEGLOW_PATH] [--is_simple IS_SIMPLE]
                              [-i INPUT_PATH] [-o OUTPUT_PATH] [-c CONFIG_PATH]
                              [--kwargs KWARGS] [--cuda CUDA]
@@ -230,13 +216,13 @@ usage: waveglow_inference.py [-h] [-w WAVEGLOW_PATH] [--is_simple IS_SIMPLE]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -w WAVEGLOW_PATH, --waveglow_path WAVEGLOW_PATH
+  -w --waveglow_path WAVEGLOW_PATH
                         Path to waveglow decoder checkpoint with model
   --is_simple IS_SIMPLE
                         是否简易模式。
-  -i INPUT_PATH, --input_path INPUT_PATH
-  -o OUTPUT_PATH, --output_path OUTPUT_PATH
-  -c CONFIG_PATH, --config_path CONFIG_PATH
+  -i --input_path INPUT_PATH
+  -o --output_path OUTPUT_PATH
+  -c --config_path CONFIG_PATH
   --kwargs KWARGS       Waveglow kwargs json
   --cuda CUDA           Set CUDA_VISIBLE_DEVICES
   --save_model_path SAVE_MODEL_PATH
