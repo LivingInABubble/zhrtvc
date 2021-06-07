@@ -128,10 +128,10 @@ def main():
                gpu_properties.minor,
                gpu_properties.total_memory / 1e9))
 
+    model_path = args.checkpoint_path
     if args.is_simple:
         workdir = Path(args.checkpoint_path).parent.parent
         model_stem = Path(args.checkpoint_path).stem
-        model_path = args.checkpoint_path
         speakers_path = workdir.joinpath('metadata', 'speakers.json')
         hparams_path = workdir.joinpath('metadata', 'hparams.json')
         texts_path = workdir.joinpath('metadata', 'validation.txt')
@@ -139,7 +139,6 @@ def main():
         save_model_path = workdir.joinpath(f'{model_stem}.{workdir.stem}.pt')
         out_dir = workdir.joinpath('test', model_stem)
     else:
-        model_path = args.checkpoint_path
         speakers_path = args.speaker_path
         hparams_path = args.hparams_path
         texts_path = args.text_path

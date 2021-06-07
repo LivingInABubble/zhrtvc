@@ -123,17 +123,16 @@ def main():
     args = parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
 
+    waveglow_path = args.waveglow_path
     if args.is_simple:
         workdir = Path(args.waveglow_path).parent.parent
         model_stem = Path(args.waveglow_path).stem
         input_path = workdir.joinpath('metadata', 'train.txt')
-        waveglow_path = args.waveglow_path
         output_path = workdir.joinpath('test', model_stem)
         config_path = workdir.joinpath('metadata', 'config.json')
         save_model_path = workdir.joinpath(f'{model_stem}.{workdir.stem}.pt')
     else:
         input_path = args.input_path
-        waveglow_path = args.waveglow_path
         output_path = args.output_path
         config_path = args.config_path
         save_model_path = args.save_model_path
