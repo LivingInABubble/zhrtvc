@@ -25,10 +25,11 @@
 # simply modified the interface to meet my needs.
 
 
-import numpy as np
 import math
-from scipy.special import expn
 from collections import namedtuple
+
+import numpy as np
+from scipy.special import expn
 
 NoiseProfile = namedtuple("NoiseProfile", "sampling_rate window_size len1 len2 win n_fft noise_mu2")
 
@@ -51,7 +52,7 @@ def profile_noise(noise, sampling_rate, window_size=0):
 
     if window_size % 2 == 1:
         window_size = window_size + 1
-    
+
     perc = 50
     len1 = int(math.floor(window_size * perc / 100))
     len2 = int(window_size - len1)
@@ -65,7 +66,7 @@ def profile_noise(noise, sampling_rate, window_size=0):
     for j in range(0, window_size * n_frames, window_size):
         noise_mean += np.absolute(np.fft.fft(win * noise[j:j + window_size], n_fft, axis=0))
     noise_mu2 = (noise_mean / n_frames) ** 2
-    
+
     return NoiseProfile(sampling_rate, window_size, len1, len2, win, n_fft, noise_mu2)
 
 
@@ -85,14 +86,14 @@ def denoise(wav, noise_profile: NoiseProfile, eta=0.15):
     wav, dtype = to_float(wav)
     wav += np.finfo(np.float64).eps
     p = noise_profile
-    
+
     nframes = int(math.floor(len(wav) / p.len2) - math.floor(p.window_size / p.len2))
     x_final = np.zeros(nframes * p.len2)
 
     aa = 0.98
     mu = 0.98
     ksi_min = 10 ** (-25 / 10)
-    
+
     x_old = np.zeros(p.len1)
     xk_prev = np.zeros(p.len1)
     noise_mu2 = p.noise_mu2
@@ -111,7 +112,7 @@ def denoise(wav, noise_profile: NoiseProfile, eta=0.15):
             ksi = aa * xk_prev / noise_mu2 + (1 - aa) * np.maximum(gammak - 1, 0)
             ksi = np.maximum(ksi_min, ksi)
 
-        log_sigma_k = gammak * ksi/(1 + ksi) - np.log(1 + ksi)
+        log_sigma_k = gammak * ksi / (1 + ksi) - np.log(1 + ksi)
         vad_decision = np.sum(log_sigma_k) / p.window_size
         if vad_decision < eta:
             noise_mu2 = mu * noise_mu2 + (1 - mu) * sig2

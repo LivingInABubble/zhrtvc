@@ -5,9 +5,9 @@
 """
 __init__
 """
+import logging
 import sys
 from pathlib import Path
-import logging
 
 sys.path.append(str(Path(__file__).absolute().parent))
 logging.basicConfig(level=logging.INFO)

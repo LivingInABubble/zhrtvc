@@ -4,20 +4,15 @@
 # date: 2020/2/20
 """
 """
-from pathlib import Path
-from functools import partial
-from multiprocessing.pool import Pool
-from matplotlib import pyplot as plt
-from tqdm import tqdm
-import collections as clt
 import os
 import re
-import json
-import numpy as np
 import shutil
+from pathlib import Path
 
 import aukit
+import numpy as np
 from aukit.audio_griffinlim import default_hparams, mel_spectrogram
+from tqdm import tqdm
 
 # from hparams import hparams
 

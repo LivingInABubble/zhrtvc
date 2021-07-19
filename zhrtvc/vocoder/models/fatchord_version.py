@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from vocoder.distribution import sample_from_discretized_mix_logistic
-from vocoder.display import *
+
 from vocoder.audio import *
+from vocoder.display import *
+from vocoder.distribution import sample_from_discretized_mix_logistic
 
 
 class ResBlock(nn.Module):
@@ -244,7 +245,7 @@ class WaveRNN(nn.Module):
 
     def gen_display(self, i, seq_len, b_size, gen_rate):
         pbar = progbar(i, seq_len)
-        msg = f'| {pbar} {i*b_size}/{seq_len*b_size} | Batch Size: {b_size} | Gen Rate: {gen_rate:.1f}kHz | '
+        msg = f'| {pbar} {i * b_size}/{seq_len * b_size} | Batch Size: {b_size} | Gen Rate: {gen_rate:.1f}kHz | '
         stream(msg)
 
     def get_gru_cell(self, gru):

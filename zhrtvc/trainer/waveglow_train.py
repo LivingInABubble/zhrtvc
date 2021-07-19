@@ -6,7 +6,6 @@
 waveglow_train
 """
 import json
-import logging
 import os
 import sys
 from argparse import ArgumentParser
@@ -14,6 +13,11 @@ from pathlib import Path
 from shutil import copyfile
 
 import torch
+
+# import logging
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(Path(__file__).stem)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def parse_args():
@@ -28,10 +32,6 @@ def parse_args():
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
-    # logger = logging.getLogger(Path(__file__).stem)
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
     from waveglow.train import train
 
     args = parse_args()

@@ -1,13 +1,15 @@
-from sklearn.model_selection import train_test_split
-from synthesizer.utils.text import text_to_sequence
-from synthesizer.infolog import log
-import tensorflow as tf
-import numpy as np
+import os
 import threading
 import time
-import os
-from tqdm import tqdm
 from pathlib import Path
+
+import numpy as np
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from tqdm import tqdm
+
+from synthesizer.infolog import log
+from synthesizer.utils.text import text_to_sequence
 
 _batches_per_group = 8
 

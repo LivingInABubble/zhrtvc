@@ -1,4 +1,4 @@
- 中文语音克隆
+中文语音克隆
 
 ## 使用指引
 
@@ -11,8 +11,8 @@
 建议使用GMW版本开发，本项目重点维护GMW版本。
 
 ### 容器环境Docker
-镜像基于ubuntu18.04，python环境是python3.7版本，用anaconda的环境。
-必要依赖已经安装好，TensorFlow和Torch可以根据自己的实际情况安装。
+
+镜像基于ubuntu18.04，python环境是python3.7版本，用anaconda的环境。 必要依赖已经安装好，TensorFlow和Torch可以根据自己的实际情况安装。
 
 ```
 # 执行路径为Dockerfile文件所在目录的路径
@@ -48,7 +48,6 @@ pip install torch==1.7.0+cpu torchvision==0.8.0 torchaudio==0.7.0 -f https://dow
 - ESV版本的依赖：requirements_esv.txt
 - 全部版本适用的依赖：requirements.txt
 
-
 ### 语音合成器mellotron
 
 #### 1. 处理语料。
@@ -74,7 +73,6 @@ pip install torch==1.7.0+cpu torchvision==0.8.0 torchaudio==0.7.0 -f https://dow
 ```markdown
 音频文件相对路径\t文本内容\n
 ```
-
 
 - 例如：
 
@@ -129,7 +127,6 @@ optional arguments:
 - 注意
 
 如果多个数据一起用，可以用绝对路径表示，汇总到一个metadata.csv文件，便于训练。
-
 
 #### 3. 应用mellotron模型。
 
@@ -204,6 +201,7 @@ optional arguments:
 ```
 
 #### 3. 应用waveglow模型。
+
 ```
 执行：
 python trainer/waveglow_inference.py
@@ -233,25 +231,34 @@ optional arguments:
 ## 参考项目
 
 - **Real-Time Voice Cloning**
-This repository is an implementation of [Transfer Learning from Speaker Verification to
-Multispeaker Text-To-Speech Synthesis](https://arxiv.org/pdf/1806.04558.pdf) (SV2TTS) with a vocoder that works in real-time. Feel free to check [my thesis](https://matheo.uliege.be/handle/2268.2/6801) if you're curious or if you're looking for info I haven't documented yet (don't hesitate to make an issue for that too). Mostly I would recommend giving a quick look to the figures beyond the introduction.
+  This repository is an implementation
+  of [Transfer Learning from Speaker Verification to Multispeaker Text-To-Speech Synthesis](https://arxiv.org/pdf/1806.04558.pdf) (
+  SV2TTS) with a vocoder that works in real-time. Feel free to
+  check [my thesis](https://matheo.uliege.be/handle/2268.2/6801) if you're curious or if you're looking for info I
+  haven't documented yet (don't hesitate to make an issue for that too). Mostly I would recommend giving a quick look to
+  the figures beyond the introduction.
 
-SV2TTS is a three-stage deep learning framework that allows to create a numerical representation of a voice from a few seconds of audio, and to use it to condition a text-to-speech model trained to generalize to new voices.
+SV2TTS is a three-stage deep learning framework that allows to create a numerical representation of a voice from a few
+seconds of audio, and to use it to condition a text-to-speech model trained to generalize to new voices.
 
 **Video demonstration** (click the picture):
 
 [![Toolbox demo](https://i.imgur.com/Ixy13b7.png)](https://www.youtube.com/watch?v=-O_hYhToKoA)
 
-### Papers implemented  
+### Papers implemented
+
 | URL | Designation | Title | Implementation source |
 | --- | ----------- | ----- | --------------------- |
-|[**1806.04558**](https://arxiv.org/pdf/1806.04558.pdf) | **SV2TTS** | **Transfer Learning from Speaker Verification to Multispeaker Text-To-Speech Synthesis** | This repo |
+|[**1806.04558**](https://arxiv.org/pdf/1806.04558.pdf) | **SV2TTS** | **Transfer Learning from Speaker Verification to
+Multispeaker Text-To-Speech Synthesis** | This repo |
 |[1802.08435](https://arxiv.org/pdf/1802.08435.pdf) | WaveRNN (vocoder) | Efficient Neural Audio Synthesis | [fatchord/WaveRNN](https://github.com/fatchord/WaveRNN) |
 |[1712.05884](https://arxiv.org/pdf/1712.05884.pdf) | Tacotron 2 (synthesizer) | Natural TTS Synthesis by Conditioning Wavenet on Mel Spectrogram Predictions | [Rayhane-mamah/Tacotron-2](https://github.com/Rayhane-mamah/Tacotron-2)
 |[1710.10467](https://arxiv.org/pdf/1710.10467.pdf) | GE2E (encoder)| Generalized End-To-End Loss for Speaker Verification | This repo |
 
 ## Wiki
+
 - **How it all works** (coming soon!)
 - [**Training models yourself**](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/Training)
-- **Training with other data/languages** (coming soon! - see [here](https://github.com/CorentinJ/Real-Time-Voice-Cloning/issues/30#issuecomment-507864097) for now)
+- **Training with other data/languages** (coming soon! -
+  see [here](https://github.com/CorentinJ/Real-Time-Voice-Cloning/issues/30#issuecomment-507864097) for now)
 - [**TODO and planned features**](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/TODO-&-planned-features) 

@@ -4,21 +4,20 @@
 # date: 2020/2/25
 """
 """
-from pathlib import Path
-from functools import partial
-from multiprocessing.pool import Pool
-from matplotlib import pyplot as plt
-from tqdm import tqdm
-import collections as clt
+import json
 import os
 import re
-import json
-import numpy as np
 import shutil
+from functools import partial
+from multiprocessing.pool import Pool
+from pathlib import Path
+
+import aukit
+import numpy as np
+import pydub
+from tqdm import tqdm
 
 from melgan.inference import wav2mel, infer_waveform_melgan, melgan_hparams, Dict2Obj
-import aukit
-import pydub
 
 _sr = 16000
 

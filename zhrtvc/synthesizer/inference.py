@@ -1,18 +1,21 @@
-from synthesizer.tacotron2 import Tacotron2
-from synthesizer.hparams import hparams as default_hparams
 # from multiprocess.pool import Pool  # You're free to use either one
 from multiprocessing import Pool  #
-from synthesizer.utils import audio
 from pathlib import Path
 from typing import Union, List
-import tensorflow as tf
-import numpy as np
-import numba.cuda
+
 import librosa
+import numba.cuda
+import numpy as np
+import tensorflow as tf
+
+from synthesizer.hparams import hparams as default_hparams
+from synthesizer.tacotron2 import Tacotron2
+from synthesizer.utils import audio
 
 
 class Synthesizer:
     sample_rate = default_hparams.sample_rate
+
     def __init__(self, checkpoints_dir: Path, verbose=True, low_mem=False, hparams=None):
         """
         Creates a synthesizer ready for inference. The actual model isn't loaded in memory until

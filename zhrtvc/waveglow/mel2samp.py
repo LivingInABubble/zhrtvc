@@ -24,8 +24,8 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # *****************************************************************************\
-from pathlib import Path
 import logging
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(Path(__file__).stem)
@@ -37,7 +37,6 @@ import json
 import torch
 import torch.utils.data
 import sys
-from scipy.io.wavfile import read
 import librosa
 import numpy as np
 import traceback

@@ -5,61 +5,51 @@
 """
 melgan_inference
 """
-from pathlib import Path
-import logging
-import sys
 import os
+import sys
+import time
+import traceback
+from argparse import ArgumentParser
+from pathlib import Path
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(Path(__file__).stem)
+import librosa
+import numpy as np
+import torch
+from scipy.io import wavfile
+from tqdm import tqdm
+
+# import logging
+
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(Path(__file__).stem)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import argparse
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     # Path(r'E:\githup\zhrtvc\data\best_step10_netG_torch.pt')
     parser.add_argument("-i", "--folder", type=Path, default=Path('../data/samples/aliaudio'),
                         help='输入音频文件的目录路径')
     parser.add_argument("-o", "--save_path", type=Path, default=Path("../data/results/melgan"),
                         help='输出生成语音的目录路径')
     parser.add_argument("-m", "--load_path", type=Path,
-                        default=Path("../models/vocoder/saved_models/melgan/melgan_multi_speaker.pt"),
-                        help='模型路径')
-    parser.add_argument("--args_path", type=str, default='',
-                        help='设置模型参数的文件')
-    parser.add_argument("--mode", type=str, default='default',
-                        help='模型模式')
-    parser.add_argument("--n_samples", type=int, default=10,
-                        help='需要实验多少个音频')
-    parser.add_argument("--save_model_path", type=str, default='',
-                        help='保存模型为可以直接torch.load的格式')
-    parser.add_argument("--cuda", type=str, default='-1',
-                        help='设置CUDA_VISIBLE_DEVICES')
-    args = parser.parse_args()
-    return args
+                        default=Path("../models/vocoder/saved_models/melgan/melgan_multi_speaker.pt"), help='模型路径')
+    parser.add_argument("--args_path", type=str, default='', help='设置模型参数的文件')
+    parser.add_argument("--mode", type=str, default='default', help='模型模式')
+    parser.add_argument("--n_samples", type=int, default=10, help='需要实验多少个音频')
+    parser.add_argument("--save_model_path", type=str, default='', help='保存模型为可以直接torch.load的格式')
+    parser.add_argument("--cuda", type=str, default='-1', help='设置CUDA_VISIBLE_DEVICES')
 
-
-args = parse_args()
-
-os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
-
-import traceback
-import numpy as np
-
-import librosa
-import torch
-import time
-from tqdm import tqdm
-from scipy.io import wavfile
-
-from melgan.inference import MelVocoder, get_default_device, save_model
-
-_device = get_default_device()
+    return parser.parse_args()
 
 
 def main():
+    from melgan.inference import MelVocoder, get_default_device, save_model
+
+    args = parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
+    _device = get_default_device()
+
     vocoder = MelVocoder(args.load_path, github=args.mode == 'default', args_path=args.args_path,
                          device=_device, mode=args.mode)
     if args.save_model_path:
@@ -71,11 +61,8 @@ def main():
     for i, fname in enumerate(tqdm(fpath_choices, 'inference', ncols=100)):
         try:
             wav, sr = librosa.core.load(str(fname), sr=None)
-
             mel = vocoder(torch.from_numpy(wav[None]))
-
             recons = vocoder.inverse(mel.to(_device)).squeeze().cpu().numpy()
-
             strftime = time.strftime('%Y%m%d-%H%M%S')
             outdir = Path(args.save_path).joinpath(f'{args.load_path.stem}_{args.mode}')
             outdir.mkdir(exist_ok=True, parents=True)

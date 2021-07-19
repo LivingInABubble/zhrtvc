@@ -1,34 +1,24 @@
-from pathlib import Path
+import hashlib
 import logging
+import os
+import random
+import sys
+import traceback
+from pathlib import Path
+
+import numpy as np
+import torch
+import torch.utils.data
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(Path(__file__).stem)
 
-import sys
-
 sys.path.append(str(Path(__file__).absolute().parent.parent))
-
-import random
-import os
-import re
-import numpy as np
-import torch
-import torch.utils.data
-import librosa
-import hashlib
-import traceback
-from pathlib import Path
-
-from mellotron import layers
-from mellotron.utils import load_wav_to_torch, load_filepaths_and_text, load_filepaths_and_text_train
-from mellotron.text import text_to_sequence, cmudict
-from mellotron.yin import compute_yin
-
-from encoder import inference as encoder
 
 
 def transform_embed(wav, encoder_model_fpath=Path()):
-    # from encoder import inference as encoder
+    from encoder import inference as encoder
+
     if not encoder.is_loaded():
         encoder.load_model(encoder_model_fpath)
 
@@ -40,11 +30,12 @@ def transform_embed(wav, encoder_model_fpath=Path()):
         audio_start = random.randint(0, max_audio_start)
         wav_ = wav_[audio_start:audio_start + segment_length]
 
-    embed = encoder.embed_utterance(wav_)
-    return embed
+    return encoder.embed_utterance(wav_)
 
 
 def transform_text(text, text_cleaners):
+    from mellotron.text import text_to_sequence
+
     return text_to_sequence(text, text_cleaners)
 
 
@@ -52,6 +43,7 @@ def transform_mel(wav, stft=None):
     audio_norm = torch.FloatTensor(wav[None].astype(np.float32))
     melspec = stft.mel_spectrogram(audio_norm)
     melspec = torch.squeeze(melspec, 0)
+
     return melspec.cpu().numpy()
 
 
@@ -68,6 +60,8 @@ def transform_speaker(speaker, speaker_ids=None):
 
 
 def transform_f0(wav, hparams):
+    from mellotron.yin import compute_yin
+
     sampling_rate = hparams.sampling_rate
     frame_length = hparams.filter_length
     hop_length = hparams.hop_length
@@ -75,14 +69,12 @@ def transform_f0(wav, hparams):
     f0_max = hparams.f0_max
     harm_thresh = hparams.harm_thresh
 
-    f0, harmonic_rates, argmins, times = compute_yin(
-        wav, sampling_rate, frame_length, hop_length, f0_min, f0_max,
-        harm_thresh)
+    f0, harmonic_rates, argmins, times = compute_yin(wav, sampling_rate, frame_length, hop_length, f0_min, f0_max,
+                                                     harm_thresh)
     pad = int((frame_length / hop_length) / 2)
     f0 = [0.0] * pad + f0 + [0.0] * pad
 
-    f0 = np.array(f0, dtype=np.float32)
-    return f0
+    return np.array(f0, dtype=np.float32)
 
 
 def transform_data_train(hparams, text_data, mel_data, speaker_data, f0_data, embed_data=None):
@@ -167,7 +159,7 @@ def transform_data_train(hparams, text_data, mel_data, speaker_data, f0_data, em
         f0 = torch.from_numpy(f0)
     if isinstance(speaker, np.ndarray):
         speaker = torch.from_numpy(speaker)
-    return (text, mel, speaker, f0)
+    return text, mel, speaker, f0
 
 
 class TextMelLoader(torch.utils.data.Dataset):
@@ -176,8 +168,11 @@ class TextMelLoader(torch.utils.data.Dataset):
         2) normalizes text and converts them to sequences of one-hot vectors
         3) computes mel-spectrograms and f0s from audio files.
     """
-
     def __init__(self, audiopaths_and_text, hparams, speaker_ids=None, mode='train'):
+        from mellotron.utils import load_filepaths_and_text_train, load_filepaths_and_text
+        from mellotron.layers import TacotronSTFT
+        from mellotron.text import cmudict
+
         self.hparams = hparams
         tmp = mode.split('-')
         if tmp[0] == 'train':
@@ -192,13 +187,12 @@ class TextMelLoader(torch.utils.data.Dataset):
             else:
                 self.audiopaths_and_text = ['audiopath', 'text', 'speaker']
             self.mode = False
+
         self.text_cleaners = hparams.text_cleaners
         self.max_wav_value = hparams.max_wav_value
         self.sampling_rate = hparams.sampling_rate
-        self.stft = layers.TacotronSTFT(
-            hparams.filter_length, hparams.hop_length, hparams.win_length,
-            hparams.n_mel_channels, hparams.sampling_rate, hparams.mel_fmin,
-            hparams.mel_fmax)
+        self.stft = TacotronSTFT(hparams.filter_length, hparams.hop_length, hparams.win_length, hparams.n_mel_channels,
+                                 hparams.sampling_rate, hparams.mel_fmin, hparams.mel_fmax)
         self.sampling_rate = hparams.sampling_rate
         self.filter_length = hparams.filter_length
         self.hop_length = hparams.hop_length
@@ -251,28 +245,24 @@ class TextMelLoader(torch.utils.data.Dataset):
         return out
 
     def get_data_train_v2(self, data_dir):
-        (text_data, mel_data, speaker_data, f0_data) = self.get_data(data_dir)
+        text_data, mel_data, speaker_data, f0_data = self.get_data(data_dir)
         assert mel_data.shape[1] < self.max_decoder_steps
         embed_data = np.zeros(256)  # 临时
-        out = transform_data_train(
-            hparams=self.hparams,
-            text_data=text_data,
-            mel_data=mel_data,
-            speaker_data=speaker_data,
-            f0_data=f0_data,
-            embed_data=embed_data)
-        return out
+
+        return transform_data_train(hparams=self.hparams, text_data=text_data, mel_data=mel_data,
+                                    speaker_data=speaker_data, f0_data=f0_data, embed_data=embed_data)
 
     def create_speaker_lookup_table(self, audiopaths_and_text):
         speaker_ids = np.sort(np.unique([x[-1] if len(x) >= 3 else '0' for x in audiopaths_and_text]))
-        d = {speaker_ids[i]: i for i in range(len(speaker_ids))}
-        return d
 
-    def get_f0(self, audio, sampling_rate=22050, frame_length=1024,
-               hop_length=256, f0_min=100, f0_max=300, harm_thresh=0.1):
-        f0, harmonic_rates, argmins, times = compute_yin(
-            audio, sampling_rate, frame_length, hop_length, f0_min, f0_max,
-            harm_thresh)
+        return {speaker_ids[i]: i for i in range(len(speaker_ids))}
+
+    def get_f0(self, audio, sampling_rate=22050, frame_length=1024, hop_length=256, f0_min=100, f0_max=300,
+               harm_thresh=0.1):
+        from mellotron.yin import compute_yin
+
+        f0, harmonic_rates, argmins, times = compute_yin(audio, sampling_rate, frame_length, hop_length, f0_min, f0_max,
+                                                         harm_thresh)
         pad = int((frame_length / hop_length) / 2)
         f0 = [0.0] * pad + f0 + [0.0] * pad
 
@@ -285,13 +275,16 @@ class TextMelLoader(torch.utils.data.Dataset):
         return f0
 
     def get_embed(self, wav):
-        # from encoder import inference as encoder
+        from encoder import inference as encoder
+        from encoder.audio import preprocess_wav
+
         if not encoder.is_loaded():
             encoder.load_model(self.encoder_model_fpath, device='cpu')
             # 用cpu避免以下报错。
-            # "RuntimeError: Cannot re-initialize CUDA in forked subprocess. To use CUDA with multiprocessing, you must use the ‘spawn’ start method"
+            # "RuntimeError: Cannot re-initialize CUDA in forked subprocess.
+            # To use CUDA with multiprocessing, you must use the ‘spawn’ start method"
 
-        wav_ = encoder.preprocess_wav(wav)
+        wav_ = preprocess_wav(wav)
         # Take segment
         segment_length = 2 * encoder.sampling_rate  # 随机选取2秒语音生成语音表示向量
         if len(wav_) > segment_length:
@@ -303,8 +296,9 @@ class TextMelLoader(torch.utils.data.Dataset):
         return embed
 
     def get_data(self, audiopath_and_text):
-        audiopath, text, speaker = audiopath_and_text
+        from mellotron.utils import load_wav_to_torch
 
+        audiopath, text, speaker = audiopath_and_text
         text = self.get_text(text)
 
         audio_norm, sampling_rate = load_wav_to_torch(audiopath, sr_force=self.stft.sampling_rate)
@@ -329,7 +323,7 @@ class TextMelLoader(torch.utils.data.Dataset):
         else:
             speaker = self.get_speaker(speaker)
 
-        return (text, mel, speaker, f0)
+        return text, mel, speaker, f0
 
     def get_speaker(self, speaker):
         if self.hparams.train_mode.endswith('mspk'):
@@ -348,10 +342,9 @@ class TextMelLoader(torch.utils.data.Dataset):
         return melspec
 
     def get_text(self, text):
-        text_norm = torch.IntTensor(
-            text_to_sequence(text, self.text_cleaners))  # self.cmudict, self.p_arpabet))
+        from mellotron.text import text_to_sequence
 
-        return text_norm
+        return torch.IntTensor(text_to_sequence(text, self.text_cleaners))  # self.cmudict, self.p_arpabet))
 
     def __getitem__(self, index):
         if self.mode:
@@ -367,15 +360,13 @@ class TextMelLoader(torch.utils.data.Dataset):
                     #         'The index <{}> loaded success! <Train>\n{}\n'.format(tmp, '-' * 50))
                     return out
                 except:
-                    logger.info(
-                        'The index <{}> loaded failed! <Train>'.format(index, tmp))
+                    logger.info('The index <{}> loaded failed! <Train>'.format(index, tmp))
                     traceback.print_exc()
                     self.ids.discard(tmp)
                     tmp = np.random.choice(list(self.ids))
         else:
             try:  # 数据预处理模式容错。
-                out = self.get_data(self.audiopaths_and_text[index])
-                return out
+                return self.get_data(self.audiopaths_and_text[index])
             except Exception as e:
                 logger.info('The index <{}> loaded failed! <Preprocess>'.format(index))
                 traceback.print_exc()
@@ -385,10 +376,9 @@ class TextMelLoader(torch.utils.data.Dataset):
         return len(self.audiopaths_and_text)
 
 
-class TextMelCollate():
+class TextMelCollate:
     """ Zero-pads model inputs and targets based on number of frames per setep
     """
-
     def __init__(self, n_frames_per_step, mode='train'):
         self.n_frames_per_step = n_frames_per_step
         self.train_mode = mode == 'train'
@@ -400,9 +390,8 @@ class TextMelCollate():
         batch: [text_normalized, mel_normalized]
         """
         # Right zero-pad all one-hot text sequences to max input length
-        input_lengths, ids_sorted_decreasing = torch.sort(
-            torch.LongTensor([len(x[0]) for x in batch]),
-            dim=0, descending=True)
+        input_lengths, ids_sorted_decreasing = torch.sort(torch.LongTensor([len(x[0]) for x in batch]), dim=0,
+                                                          descending=True)
         max_input_len = input_lengths[0]
 
         # 推理模式不要排序
@@ -426,6 +415,7 @@ class TextMelCollate():
             num_f0s = batch[0][3].size(0)  # 获取f0s的维度。
         except:
             num_f0s = 1
+
         try:
             num_speaker_ids = batch[0][2].size(1)  # 获取num_speaker_ids的维度。
         except:
@@ -464,6 +454,4 @@ class TextMelCollate():
         # fixme 为了推理能够用batch
         input_lengths = torch.ones_like(input_lengths) * max_input_len
 
-        model_inputs = (text_padded, input_lengths, mel_padded, gate_padded,
-                        output_lengths, speaker_ids, f0_padded)
-        return model_inputs
+        return text_padded, input_lengths, mel_padded, gate_padded, output_lengths, speaker_ids, f0_padded

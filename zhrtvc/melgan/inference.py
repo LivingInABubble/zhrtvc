@@ -4,21 +4,15 @@
 # date: 2020/2/20
 """
 """
-from pathlib import Path
-import traceback
-import time
-import argparse
 
-from tqdm import tqdm
-from scipy.io import wavfile
-import librosa
-import torch
-import numpy as np
-import yaml
 import json
 
-from .mel2wav.modules import Generator, Audio2Mel
+import numpy as np
+import torch
+import yaml
+
 from .mel2wav.interface import MelVocoder, get_default_device
+from .mel2wav.modules import Generator
 
 _model = None
 

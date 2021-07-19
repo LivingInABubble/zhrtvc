@@ -6,7 +6,6 @@
 mellotron_inference
 """
 import json
-import logging
 import os
 import re
 import sys
@@ -23,6 +22,11 @@ from aukit import save_wav, play_audio
 from numpy.random import choice
 from tqdm import tqdm
 from unidecode import unidecode
+
+# import logging
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(Path(__file__).stem)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def parse_args():
@@ -79,8 +83,8 @@ def convert_input(text):
 def plot_mel_alignment_gate_audio(mel, alignment, gate, audio, figsize=(16, 16)):
     fig, axes = plt.subplots(4, 1, figsize=figsize)
     axes = axes.flatten()
-    axes[0].imshow(mel, aspect='auto', origin='bottom', interpolation='none')
-    axes[1].imshow(alignment, aspect='auto', origin='bottom', interpolation='none')
+    axes[0].imshow(mel, aspect='auto', origin='lower', interpolation='none')
+    axes[1].imshow(alignment, aspect='auto', origin='lower', interpolation='none')
     axes[2].scatter(range(len(gate)), gate, alpha=0.5, color='red', marker='.', s=1)
     axes[2].set_xlim(0, len(gate))
     axes[3].scatter(range(len(audio)), audio, alpha=0.5, color='blue', marker='.', s=1)
@@ -95,10 +99,6 @@ def plot_mel_alignment_gate_audio(mel, alignment, gate, audio, figsize=(16, 16))
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(Path(__file__).stem)
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
     from mellotron.inference import MellotronSynthesizer
     from mellotron.inference import save_model
     from utils.argutils import locals2dict

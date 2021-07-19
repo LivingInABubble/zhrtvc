@@ -4,25 +4,24 @@
 # date: 2020/2/21
 """
 """
-import yaml
+import argparse
 import json
 import time
-import argparse
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
-
 import torch
 import torch.nn.functional as F
+import yaml
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 from .mel2wav.dataset import AudioDataset
+from .mel2wav.interface import audio2mel, audio2mel_synthesizer, audio2mel_mellotron, get_default_device
 from .mel2wav.modules import Generator, Discriminator
 from .mel2wav.utils import save_sample
-from .mel2wav.interface import audio2mel, audio2mel_synthesizer, audio2mel_mellotron, get_default_device
 
 _device = get_default_device()
 

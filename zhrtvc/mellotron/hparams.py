@@ -1,15 +1,13 @@
 # import tensorflow as tf
 # from text.symbols import symbols
-from aukit import Dict2Obj, hparams_griffinlim
+from aukit import Dict2Obj
 
 
-def create_hparams(hparams_string=None, verbose=False, level=2):
+def create_hparams(hparams_string=None, level=2):
     """Create model hyperparameters. Parse nondefault from given string."""
     # hparams = tf.contrib.training.HParams(
     hparams = Dict2Obj(dict(
-        ################################
-        # Experiment Parameters        #
-        ################################
+        # Experiment Parameters
         dataloader_num_workers=10,
         epochs=1000000,
         iters_per_checkpoint=1000,  # 500,
@@ -23,9 +21,7 @@ def create_hparams(hparams_string=None, verbose=False, level=2):
         cudnn_benchmark=False,
         ignore_layers=['speaker_embedding.weight'],
 
-        ################################
-        # Data Parameters             #
-        ################################
+        # Data Parameters
         train_mode='train-rtvc',
         # f01:用基频，prenet_f0_dim=1。
         # f02:用基频均值填充，prenet_f0_dim=1。
@@ -48,9 +44,7 @@ def create_hparams(hparams_string=None, verbose=False, level=2):
         p_arpabet=1.0,
         cmudict_path=None,  # "data/cmu_dictionary",
 
-        ################################
-        # Audio Parameters             #
-        ################################
+        # Audio Parameters
         max_wav_value=32768.0,
         sampling_rate=22050,  # hparams_griffinlim.sample_rate,  # 16000,  # 22050,
         filter_length=1024,  # hparams_griffinlim.n_fft,  # 1024,
@@ -63,9 +57,7 @@ def create_hparams(hparams_string=None, verbose=False, level=2):
         f0_max=880,
         harm_thresh=0.25,
 
-        ################################
-        # Model Parameters             #
-        ################################
+        # Model Parameters
         n_symbols=145,  # len(symbols),
         symbols_embedding_dim=128 * level,  # 512,
 
@@ -120,9 +112,7 @@ def create_hparams(hparams_string=None, verbose=False, level=2):
         token_num=10,
         num_heads=8,
 
-        ################################
-        # Optimization Hyperparameters #
-        ################################
+        # Optimization Hyperparameters
         use_saved_learning_rate=False,
         learning_rate=1e-3,
         learning_rate_min=1e-5,
@@ -131,7 +121,6 @@ def create_hparams(hparams_string=None, verbose=False, level=2):
         grad_clip_thresh=1.0,
         batch_size=32,  # 32,
         mask_padding=True,  # set model's padded outputs to padded values
-
     ))
 
     if hparams_string:

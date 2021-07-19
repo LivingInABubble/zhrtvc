@@ -1,13 +1,15 @@
 from math import sqrt
+
 import numpy as np
-from numpy import finfo
 import torch
-from torch.autograd import Variable
+from numpy import finfo
 from torch import nn
+from torch.autograd import Variable
 from torch.nn import functional as F
+
 from mellotron.layers import ConvNorm, LinearNorm
-from mellotron.utils import to_gpu, get_mask_from_lengths
 from mellotron.modules import GST
+from mellotron.utils import to_gpu, get_mask_from_lengths
 
 drop_rate = 0.5
 

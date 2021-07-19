@@ -1,9 +1,9 @@
+import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch
 from librosa.filters import mel as librosa_mel_fn
 from torch.nn.utils import weight_norm
-import numpy as np
 
 
 def weights_init(m):
@@ -35,13 +35,9 @@ class Audio2Mel(nn.Module):
             mel_fmax=None,
     ):
         super().__init__()
-        ##############################################
-        # FFT Parameters                              #
-        ##############################################
+        # FFT Parameters
         window = torch.hann_window(win_length).float()
-        mel_basis = librosa_mel_fn(
-            sampling_rate, n_fft, n_mel_channels, mel_fmin, mel_fmax
-        )
+        mel_basis = librosa_mel_fn(sampling_rate, n_fft, n_mel_channels, mel_fmin, mel_fmax)
         mel_basis = torch.from_numpy(mel_basis).float()
         self.register_buffer("mel_basis", mel_basis)
         self.register_buffer("window", window)
@@ -54,14 +50,8 @@ class Audio2Mel(nn.Module):
     def forward(self, audio):
         p = (self.n_fft - self.hop_length) // 2
         audio = F.pad(audio, (p, p), "reflect").squeeze(1)
-        fft = torch.stft(
-            audio,
-            n_fft=self.n_fft,
-            hop_length=self.hop_length,
-            win_length=self.win_length,
-            window=self.window,
-            center=False,
-        )
+        fft = torch.stft(audio, n_fft=self.n_fft, hop_length=self.hop_length, win_length=self.win_length,
+                         window=self.window, center=False)
         real_part, imag_part = fft.unbind(-1)
         magnitude = torch.sqrt(real_part ** 2 + imag_part ** 2)
         mel_output = torch.matmul(self.mel_basis, magnitude)
@@ -101,14 +91,8 @@ class Generator(nn.Module):
         for i, r in enumerate(ratios):
             model += [
                 nn.LeakyReLU(0.2),
-                WNConvTranspose1d(
-                    mult * ngf,
-                    mult * ngf // 2,
-                    kernel_size=r * 2,
-                    stride=r,
-                    padding=r // 2 + r % 2,
-                    output_padding=r % 2,
-                ),
+                WNConvTranspose1d(mult * ngf, mult * ngf // 2, kernel_size=r * 2, stride=r, padding=r // 2 + r % 2,
+                                  output_padding=r % 2),
             ]
 
             for j in range(n_residual_layers):
@@ -148,14 +132,8 @@ class NLayerDiscriminator(nn.Module):
             nf = min(nf * stride, 1024)
 
             model["layer_%d" % n] = nn.Sequential(
-                WNConv1d(
-                    nf_prev,
-                    nf,
-                    kernel_size=stride * 10 + 1,
-                    stride=stride,
-                    padding=stride * 5,
-                    groups=nf_prev // 4,
-                ),
+                WNConv1d(nf_prev, nf, kernel_size=stride * 10 + 1, stride=stride, padding=stride * 5,
+                         groups=nf_prev // 4),
                 nn.LeakyReLU(0.2, True),
             )
 
@@ -184,9 +162,7 @@ class Discriminator(nn.Module):
         super().__init__()
         self.model = nn.ModuleDict()
         for i in range(num_D):
-            self.model[f"disc_{i}"] = NLayerDiscriminator(
-                ndf, n_layers, downsampling_factor
-            )
+            self.model[f"disc_{i}"] = NLayerDiscriminator(ndf, n_layers, downsampling_factor)
 
         self.downsample = nn.AvgPool1d(4, stride=2, padding=1, count_include_pad=False)
         self.apply(weights_init)

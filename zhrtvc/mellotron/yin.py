@@ -41,7 +41,7 @@ def cumulativeMeanNormalizedDifferenceFunction(df, N):
     :rtype: list
     """
 
-    cmndf = df[1:] * range(1, N) / np.cumsum(df[1:]).astype(float) #scipy method
+    cmndf = df[1:] * range(1, N) / np.cumsum(df[1:]).astype(float)  # scipy method
     return np.insert(cmndf, 0, 1)
 
 
@@ -64,7 +64,7 @@ def getPitch(cmdf, tau_min, tau_max, harmo_th=0.1):
             return tau
         tau += 1
 
-    return 0    # if unvoiced
+    return 0  # if unvoiced
 
 
 def compute_yin(sig, sr, w_len=512, w_step=256, f0_min=100, f0_max=500,
@@ -94,7 +94,7 @@ def compute_yin(sig, sr, w_len=512, w_step=256, f0_min=100, f0_max=500,
     tau_max = int(sr / f0_min)
 
     timeScale = range(0, len(sig) - w_len, w_step)  # time values for each analysis window
-    times = [t/float(sr) for t in timeScale]
+    times = [t / float(sr) for t in timeScale]
     frames = [sig[t:t + w_len] for t in timeScale]
 
     pitches = [0.0] * len(timeScale)

@@ -1,35 +1,27 @@
-import os
-import time
-import argparse
-import math
-from pathlib import Path
 import json
-import shutil
-import numpy as np
-import multiprocessing as mp
-import argparse
-import yaml
+import math
+import os
 import random
+import time
+from pathlib import Path
 
-from numpy import finfo
-from tqdm import tqdm
 import aukit
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.distributed as dist
-import matplotlib.pyplot as plt
-from torch.utils.data.distributed import DistributedSampler
+import yaml
+from phkit.chinese import symbol_chinese as symbols
 from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+from tqdm import tqdm
 
-from .distributed import apply_gradient_allreduce
-from .model import load_model
 from .data_utils import TextMelLoader, TextMelCollate
-from .loss_function import Tacotron2Loss
+from .distributed import apply_gradient_allreduce
 from .logger import Tacotron2Logger
-from .hparams import create_hparams
-from .utils import inv_linearspectrogram
+from .loss_function import Tacotron2Loss
+from .model import load_model
 from .plotting_utils import plot_mel_alignment_gate_audio
-from .audio_processing import griffin_lim, dynamic_range_decompression
-from .text.symbols import symbols
 
 _device = 'cuda' if torch.cuda.is_available() else 'cpu'
 

@@ -11,17 +11,38 @@ demo_inference
 如果模型没有load，则自动load。
 保存日志和数据。
 """
-from pathlib import Path
+import json
 import logging
-import argparse
 import os
+import re
+from argparse import ArgumentParser
+from functools import partial
+from multiprocessing import Pool
+from pathlib import Path
+from tempfile import TemporaryFile, TemporaryDirectory
+from time import strftime
+from traceback import print_exc
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(Path(__file__).stem)
+import numpy as np
+import torch
+import yaml
+from aukit import save_wav, load_wav
+from librosa import resample
+from matplotlib import pyplot as plt
+from pydub import AudioSegment
+from tqdm import tqdm
+from unidecode import unidecode
+
+from melgan.inference import load_melgan_torch
+from mellotron import inference as mellotron
+from mellotron.hparams import create_hparams
+from mellotron.layers import TacotronSTFT
+from utils.argutils import locals2dict
+from waveglow import inference as waveglow
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='声音编码器、语音合成器和声码器推理')
+    parser = ArgumentParser(description='声音编码器、语音合成器和声码器推理')
     parser.add_argument('--mellotron_path', type=str,
                         default=r"../models/mellotron/kuangdd-rtvc/mellotron.kuangdd-rtvc.pt",
                         help='Mellotron model file path')
@@ -29,8 +50,7 @@ def parse_args():
                         help='WaveGlow model file path')
     parser.add_argument('--mellotron_hparams', type=str, default=r"../models/mellotron/samples/metadata/hparams.json",
                         help='Mellotron hparams json file path')
-    parser.add_argument('--is_simple', type=int, default=1,
-                        help='是否简易模式。')
+    parser.add_argument('--is_simple', type=int, default=1, help='是否简易模式。')
     parser.add_argument('--waveglow_kwargs', type=str, default=r'{"denoiser_strength":0.1,"sigma":1}',
                         help='Waveglow kwargs json')
     parser.add_argument('--device', type=str, default='', help='Use device to inference')
@@ -41,52 +61,8 @@ def parse_args():
                         default=r"../models/mellotron/samples/test/mellotron-000000.samples.waveglow-000000.samples",
                         help='Output file path or dir')
     parser.add_argument("--cuda", type=str, default='0,1,2,3', help='Set CUDA_VISIBLE_DEVICES')
-    args = parser.parse_args()
-    return args
 
-
-args = parse_args()
-
-os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
-
-import re
-import json
-import functools
-import multiprocessing as mp
-import traceback
-import tempfile
-
-import time
-
-import numpy as np
-import pydub
-from tqdm import tqdm
-from matplotlib import pyplot as plt
-import torch
-import aukit
-import unidecode
-import yaml
-import librosa
-
-from waveglow import inference as waveglow
-from melgan import inference as melgan
-from mellotron import inference as mellotron
-from utils.argutils import locals2dict
-
-from mellotron.layers import TacotronSTFT
-from mellotron.hparams import create_hparams
-
-# 用griffinlim声码器
-_hparams = create_hparams()
-_stft = TacotronSTFT(
-    _hparams.filter_length, _hparams.hop_length, _hparams.win_length,
-    _hparams.n_mel_channels, _hparams.sampling_rate, _hparams.mel_fmin,
-    _hparams.mel_fmax)
-
-_use_waveglow = 0
-
-_device = 'cuda' if torch.cuda.is_available() else 'cpu'
-filename_formatter_re = re.compile(r'[\s\\/:*?"<>|\']+')
+    return parser.parse_args()
 
 
 def process_one(kwargs: dict):
@@ -94,7 +70,7 @@ def process_one(kwargs: dict):
         kwargs['code'] = 'success'
         return kwargs
     except Exception as e:
-        traceback.print_exc()
+        print_exc()
         kwargs['code'] = f'{e}'
         return kwargs
 
@@ -105,15 +81,17 @@ def run_process(n_proc=1, **kwargs):
         kwargs_lst.append(kw)
 
     if n_proc <= 1:
-        with tempfile.TemporaryFile('w+t', encoding='utf8') as fout:
+        with TemporaryFile('w+t', encoding='utf8') as fout:
             for kw in tqdm(kwargs_lst, 'process-{}'.format(n_proc), ncols=100):
                 outs = process_one(kw)
+
                 for out in outs:
                     fout.write(f'{json.dumps(out, ensure_ascii=False)}\n')
     else:
-        func = functools.partial(process_one)
-        job = mp.Pool(n_proc).imap(func, kwargs_lst)
-        with tempfile.TemporaryFile('w+t', encoding='utf8') as fout:
+        func = partial(process_one)
+        job = Pool(n_proc).imap(func, kwargs_lst)
+
+        with TemporaryFile('w+t', encoding='utf8') as fout:
             for outs in tqdm(job, 'process-{}'.format(n_proc), ncols=100, total=len(kwargs_lst)):
                 for out in outs:
                     fout.write(f'{json.dumps(out, ensure_ascii=False)}\n')
@@ -122,8 +100,8 @@ def run_process(n_proc=1, **kwargs):
 def plot_mel_alignment_gate_audio(mel, alignment, gate, audio, figsize=(16, 16)):
     fig, axes = plt.subplots(4, 1, figsize=figsize)
     axes = axes.flatten()
-    axes[0].imshow(mel, aspect='auto', origin='bottom', interpolation='none')
-    axes[1].imshow(alignment, aspect='auto', origin='bottom', interpolation='none')
+    axes[0].imshow(mel, aspect='auto', origin='lower', interpolation='none')
+    axes[1].imshow(alignment, aspect='auto', origin='lower', interpolation='none')
     axes[2].scatter(range(len(gate)), gate, alpha=0.5, color='red', marker='.', s=1)
     axes[2].set_xlim(0, len(gate))
     axes[3].scatter(range(len(audio)), audio, alpha=0.5, color='blue', marker='.', s=1)
@@ -166,14 +144,15 @@ def transform_mellotron_input_data(dataloader, text, speaker='', audio='', devic
     # speaker_data = torch.FloatTensor(out).to(device)
     # # speaker_data = torch.zeros([1], dtype=torch.long).to(device)
     # f0_data = None
+
     return text_data, style_data, speaker_data, f0_data, mel_data
 
 
 def hello():
     waveglow.load_waveglow_torch('../models/waveglow/waveglow_v5_model.pt')
-    # melgan.load_melgan_model(r'E:\githup\zhrtvc\models\vocoder\saved_models\melgan\melgan_multi_speaker.pt',
+    # load_melgan_model(r'E:\githup\zhrtvc\models\vocoder\saved_models\melgan\melgan_multi_speaker.pt',
     #                          args_path=r'E:\githup\zhrtvc\models\vocoder\saved_models\melgan\args.yml')
-    melgan.load_melgan_torch('../models/melgan/melgan_multi_speaker_model.pt')
+    load_melgan_torch('../models/melgan/melgan_multi_speaker_model.pt')
 
     # mellotron.load_mellotron_model(r'E:\githup\zhrtvc\models\mellotron\samples\checkpoint\checkpoint-000000.pt',
     #                                hparams_path=r'E:\githup\zhrtvc\models\mellotron\samples\metadata\hparams.yml')
@@ -198,8 +177,21 @@ def hello():
     print(wav.shape)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(Path(__file__).stem)
     logger.info(__file__)
+
+    args = parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
+
+    # 用griffinlim声码器
+    _hparams = create_hparams()
+    _stft = TacotronSTFT(_hparams.filter_length, _hparams.hop_length, _hparams.win_length, _hparams.n_mel_channels,
+                         _hparams.sampling_rate, _hparams.mel_fmin, _hparams.mel_fmax)
+    _use_waveglow = 0
+    _device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    filename_formatter_re = re.compile(r'[\s\\/:*?"<>|\']+')
 
     if not args.device:
         _device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -227,9 +219,9 @@ if __name__ == "__main__":
                                          mode='test')
     waveglow_kwargs = json.loads(args.waveglow_kwargs)
     # 模型测试
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with TemporaryDirectory() as tmpdir:
         audio = os.path.join(tmpdir, 'audio_example.wav')
-        pydub.AudioSegment.silent(3000, frame_rate=args.sampling_rate).export(audio, format='wav')
+        AudioSegment.silent(3000, frame_rate=args.sampling_rate).export(audio, format='wav')
 
         text = '这是个试水的例子。'
         speaker = 'speaker'
@@ -243,7 +235,7 @@ if __name__ == "__main__":
         else:
             wavs = _stft.griffin_lim(mels_postnet)
             wav_output = wavs.squeeze().cpu().numpy()
-            aukit.save_wav(wav_output, os.path.join(tmpdir, 'demo_example.wav'), sr=args.sampling_rate)
+            save_wav(wav_output, os.path.join(tmpdir, 'demo_example.wav'), sr=args.sampling_rate)
 
     print('Test success done.')
 
@@ -289,12 +281,12 @@ if __name__ == "__main__":
             wavs = _stft.griffin_lim(mels_postnet, n_iters=5)
 
         # 保存数据
-        cur_text = filename_formatter_re.sub('', unidecode.unidecode(text))[:15]
-        cur_time = time.strftime('%Y%m%d-%H%M%S')
+        cur_text = filename_formatter_re.sub('', unidecode(text))[:15]
+        cur_time = strftime('%Y%m%d-%H%M%S')
         outpath = os.path.join(output_dir, "demo_{}_{}_out.wav".format(cur_time, cur_text))
 
         wav_output = wavs.squeeze(0).cpu().numpy()
-        aukit.save_wav(wav_output, outpath, sr=args.sampling_rate)
+        save_wav(wav_output, outpath, sr=args.sampling_rate)
 
         if isinstance(audio, (Path, str)) and Path(audio).is_file():
             # # 原声
@@ -302,16 +294,16 @@ if __name__ == "__main__":
             # shutil.copyfile(audio, refpath_raw)
 
             # 重采样
-            wav_input, sr = aukit.load_wav(audio, with_sr=True)
-            wav_input = librosa.resample(wav_input, sr, args.sampling_rate)
+            wav_input, sr = load_wav(audio, with_sr=True)
+            wav_input = resample(wav_input, sr, args.sampling_rate)
             refpath = os.path.join(output_dir, "demo_{}_{}_ref.wav".format(cur_time, cur_text))
-            aukit.save_wav(wav_input, refpath, sr=args.sampling_rate)
+            save_wav(wav_input, refpath, sr=args.sampling_rate)
 
             # # 声码器
             # wavs_ref = waveglow.generate_wave(mel=mel_data, **waveglow_kwargs)
             # outpath_ref = os.path.join(output_dir, "demo_{}_{}_ref_waveglow.wav".format(cur_time, cur_text))
             # wav_output_ref = wavs_ref.squeeze(0).cpu().numpy()
-            # aukit.save_wav(wav_output_ref, outpath_ref, sr=args.sampling_rate)
+            # save_wav(wav_output_ref, outpath_ref, sr=args.sampling_rate)
 
         fig_path = os.path.join(output_dir, "demo_{}_{}_fig.jpg".format(cur_time, cur_text))
 

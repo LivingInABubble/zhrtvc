@@ -1,5 +1,6 @@
 import torch
 from librosa.filters import mel as librosa_mel_fn
+
 from .audio_processing import dynamic_range_compression, dynamic_range_decompression, griffin_lim
 from .stft import STFT
 
@@ -9,9 +10,7 @@ class LinearNorm(torch.nn.Module):
         super(LinearNorm, self).__init__()
         self.linear_layer = torch.nn.Linear(in_dim, out_dim, bias=bias)
 
-        torch.nn.init.xavier_uniform_(
-            self.linear_layer.weight,
-            gain=torch.nn.init.calculate_gain(w_init_gain))
+        torch.nn.init.xavier_uniform_(self.linear_layer.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
 
     def forward(self, x):
         return self.linear_layer(x)
@@ -24,12 +23,9 @@ class ConvNorm(torch.nn.Module):
         if padding is None:
             assert (kernel_size % 2 == 1)
             padding = int(dilation * (kernel_size - 1) / 2)
-        self.conv = torch.nn.Conv1d(in_channels, out_channels,
-                                    kernel_size=kernel_size, stride=stride,
-                                    padding=padding, dilation=dilation,
-                                    bias=bias)
-        torch.nn.init.xavier_uniform_(
-            self.conv.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
+        self.conv = torch.nn.Conv1d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding,
+                                    dilation=dilation, bias=bias)
+        torch.nn.init.xavier_uniform_(self.conv.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
 
     def forward(self, signal):
         conv_signal = self.conv(signal)
@@ -40,12 +36,9 @@ class ConvNorm2D(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1,
                  padding=None, dilation=1, bias=True, w_init_gain='linear'):
         super(ConvNorm2D, self).__init__()
-        self.conv = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
-                                    kernel_size=kernel_size, stride=stride,
-                                    padding=padding, dilation=dilation,
-                                    groups=1, bias=bias)
-        torch.nn.init.xavier_uniform_(
-            self.conv.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
+        self.conv = torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size,
+                                    stride=stride, padding=padding, dilation=dilation, groups=1, bias=bias)
+        torch.nn.init.xavier_uniform_(self.conv.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
 
     def forward(self, signal):
         conv_signal = self.conv(signal)
@@ -53,15 +46,13 @@ class ConvNorm2D(torch.nn.Module):
 
 
 class TacotronSTFT(torch.nn.Module):
-    def __init__(self, filter_length=1024, hop_length=256, win_length=1024,
-                 n_mel_channels=80, sampling_rate=22050, mel_fmin=0.0,
-                 mel_fmax=None, **kwargs):
+    def __init__(self, filter_length=1024, hop_length=256, win_length=1024, n_mel_channels=80, sampling_rate=22050,
+                 mel_fmin=0.0, mel_fmax=None):
         super(TacotronSTFT, self).__init__()
         self.n_mel_channels = n_mel_channels
         self.sampling_rate = sampling_rate
         self.stft_fn = STFT(filter_length, hop_length, win_length)
-        mel_basis = librosa_mel_fn(
-            sampling_rate, filter_length, n_mel_channels, mel_fmin, mel_fmax)
+        mel_basis = librosa_mel_fn(sampling_rate, filter_length, n_mel_channels, mel_fmin, mel_fmax)
         mel_basis = torch.from_numpy(mel_basis).float()
         self.register_buffer('mel_basis', mel_basis)
         self.denoiser = None
@@ -80,12 +71,11 @@ class TacotronSTFT(torch.nn.Module):
         output = dynamic_range_decompression(magnitudes)
         return output
 
-    def mel_spectrogram(self, y, ref_level_db=20, magnitude_power=1.5):
+    def mel_spectrogram(self, y):
         """Computes mel-spectrograms from a batch of waves
         PARAMS
         ------
         y: Variable(torch.FloatTensor) with shape (B, T) in range [-1, 1]
-
         RETURNS
         -------
         mel_output: torch.FloatTensor of shape (B, n_mel_channels, T)
@@ -109,18 +99,20 @@ class TacotronSTFT(torch.nn.Module):
             spec_from_mel = spec_from_mel.transpose(0, 1).unsqueeze(0)
             spec_from_mel = spec_from_mel * spec_from_mel_scaling
             mel_batch.append(spec_from_mel)
+
         mel_batch = torch.cat(mel_batch, dim=0)
-        wav_outputs = griffin_lim(torch.autograd.Variable(mel_batch[:, :, :-1]), self.stft_fn, n_iters)
-        return wav_outputs
+
+        return griffin_lim(torch.autograd.Variable(mel_batch[:, :, :-1]), self.stft_fn, n_iters)
 
     def griffin_lim_denoiser(self, x, n_iters=5, denoiser_mode='zeros', denoiser_strength=0):
         wav_outputs = self.griffin_lim_(x, n_iters=n_iters)
         if self.denoiser_mode != denoiser_mode or self.denoiser is None:
             voc = lambda x: self.griffin_lim_(x, n_iters=n_iters)
             self.create_denoiser(vocoder=voc, mode=denoiser_mode)
+
         wav_outputs = self.denoiser(wav_outputs, denoiser_strength)
-        wav_outputs = wav_outputs.squeeze(1)
-        return wav_outputs
+
+        return wav_outputs.squeeze(1)
 
 
 class Denoiser(torch.nn.Module):
@@ -131,15 +123,9 @@ class Denoiser(torch.nn.Module):
         self.vocoder = vocoder
         self.stft = stft
         if mode == 'zeros':
-            mel_input = torch.zeros(
-                (1, 80, 88),
-                dtype=torch.float,
-                device=None)
+            mel_input = torch.zeros((1, 80, 88), dtype=torch.float, device=None)
         elif mode == 'normal':
-            mel_input = torch.randn(
-                (1, 80, 88),
-                dtype=torch.float,
-                device=None)
+            mel_input = torch.randn((1, 80, 88), dtype=torch.float, device=None)
         else:
             raise Exception("Mode {} if not supported".format(mode))
 
@@ -153,5 +139,5 @@ class Denoiser(torch.nn.Module):
         audio_spec, audio_angles = self.stft.transform(audio.float())
         audio_spec_denoised = audio_spec - self.bias_spec * strength
         audio_spec_denoised = torch.clamp(audio_spec_denoised, 0.0)
-        audio_denoised = self.stft.inverse(audio_spec_denoised, audio_angles)
-        return audio_denoised
+
+        return self.stft.inverse(audio_spec_denoised, audio_angles)

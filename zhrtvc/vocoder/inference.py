@@ -1,6 +1,7 @@
-from vocoder.models.fatchord_version import WaveRNN
-from vocoder import hparams as hp
 import torch
+
+from vocoder import hparams as hp
+from vocoder.models.fatchord_version import WaveRNN
 
 _model = None  # type: WaveRNN
 # _device = torch.device('cpu')  # None # type: torch.device

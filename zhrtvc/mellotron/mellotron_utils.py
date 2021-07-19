@@ -1,10 +1,10 @@
 import re
-import numpy as np
-import music21 as m21
-import torch
-import torch.nn.functional as F
-from text import text_to_sequence, get_arpabet, cmudict
 
+import music21 as m21
+import numpy as np
+import torch
+
+from text import text_to_sequence, get_arpabet, cmudict
 
 CMUDICT_PATH = "data/cmu_dictionary"
 CMUDICT = cmudict.CMUDict(CMUDICT_PATH)
@@ -103,19 +103,19 @@ PHONEMEDURATION = {
 def add_space_between_events(events, connect=False):
     new_events = []
     for i in range(1, len(events)):
-        token_a, freq_a, start_time_a, end_time_a = events[i-1][-1]
+        token_a, freq_a, start_time_a, end_time_a = events[i - 1][-1]
         token_b, freq_b, start_time_b, end_time_b = events[i][0]
 
-        if token_a in (' ', '') and len(events[i-1]) == 1:
-            new_events.append(events[i-1])
+        if token_a in (' ', '') and len(events[i - 1]) == 1:
+            new_events.append(events[i - 1])
         elif token_a not in (' ', '') and token_b not in (' ', ''):
-            new_events.append(events[i-1])
+            new_events.append(events[i - 1])
             if connect:
                 new_events.append([[' ', 0, end_time_a, start_time_b]])
             else:
                 new_events.append([[' ', 0, end_time_a, end_time_a]])
         else:
-            new_events.append(events[i-1])
+            new_events.append(events[i - 1])
 
     if new_events[-1][0][0] != ' ':
         new_events.append([[' ', 0, end_time_a, end_time_a]])
@@ -160,7 +160,7 @@ def adjust_extensions(events, phoneme_durations):
             elif token == '_' and n_consonants_after_last_vowel:
                 events[i][0] = events[idx_last_vowel][0]
                 start = idx_last_vowel + 1
-                target_ids[start:start+n_consonants_after_last_vowel] += 1
+                target_ids[start:start + n_consonants_after_last_vowel] += 1
                 target_ids[i] -= n_consonants_after_last_vowel
             elif token in phoneme_durations:
                 n_consonants_after_last_vowel += 1
@@ -174,9 +174,9 @@ def adjust_extensions(events, phoneme_durations):
 
     # adjust time of consonants that were repositioned
     for i in range(1, len(new_events)):
-        if new_events[i][2] < new_events[i-1][2]:
-            new_events[i][2] = new_events[i-1][2]
-            new_events[i][3] = new_events[i-1][3]
+        if new_events[i][2] < new_events[i - 1][2]:
+            new_events[i][2] = new_events[i - 1][2]
+            new_events[i][3] = new_events[i - 1][3]
 
     return new_events
 
@@ -194,11 +194,11 @@ def adjust_consonant_lengths(events, phoneme_durations):
                 events[i][3] = t_init + duration
             else:  # consonant comes after a vowel, must offset
                 events[idx_last_vowel][3] -= duration
-                for k in range(idx_last_vowel+1, i):
+                for k in range(idx_last_vowel + 1, i):
                     events[k][2] -= duration
                     events[k][3] -= duration
-                events[i][2] = events[i-1][3]
-                events[i][3] = events[i-1][3] + duration
+                events[i][2] = events[i - 1][3]
+                events[i][3] = events[i - 1][3] + duration
         else:
             events[i][2] = t_init
             events[i][3] = events[i][3]
@@ -243,7 +243,7 @@ def adjust_event(event, hop_length=256, sampling_rate=22050):
 
 def musicxml2score(filepath, bpm=60):
     track = {}
-    beat_length_seconds = 60/bpm
+    beat_length_seconds = 60 / bpm
     data = m21.converter.parse(filepath)
     for i in range(len(data.parts)):
         part = data.parts[i].flat
@@ -294,7 +294,7 @@ def track2events(track):
 
     events_grouped = []
     for i in range(1, len(group_ids)):
-        start, end = group_ids[i-1], group_ids[i]
+        start, end = group_ids[i - 1], group_ids[i]
         events_grouped.append(events[start:end])
 
     if events[-1][0] != ' ':
@@ -308,7 +308,7 @@ def events2eventsarpabet(event):
         return event
 
     # get word and word arpabet
-    word = ''.join([e[0] for e in event if e[0] not in('_', ' ')])
+    word = ''.join([e[0] for e in event if e[0] not in ('_', ' ')])
     word_arpabet = get_arpabet(word, CMUDICT)
     if word_arpabet[0] != '{':
         return event
@@ -349,7 +349,7 @@ def events2eventsarpabet(event):
         arpabet = re.sub('[0-9{}]', '', word_arpabet[k])
 
         if k < len(word_arpabet) - 1:
-            arpabet_compound_2 = ''.join(word_arpabet[k:k+2])
+            arpabet_compound_2 = ''.join(word_arpabet[k:k + 2])
             arpabet_compound_2 = re.sub('[0-9{}]', '', arpabet_compound_2)
 
         if i < len(event) - 1 and token_compound_2 in PHONEME2GRAPHEME[arpabet]:
@@ -366,7 +366,7 @@ def events2eventsarpabet(event):
             k += 1
         elif arpabet_compound_2 in PHONEME2GRAPHEME and token_a.lower() in PHONEME2GRAPHEME[arpabet_compound_2]:
             new_events.append([word_arpabet[k], freq_a, start_time_a, end_time_a])
-            new_events.append([word_arpabet[k+1], freq_a, start_time_a, end_time_a])
+            new_events.append([word_arpabet[k + 1], freq_a, start_time_a, end_time_a])
             i += 1
             k += 2
         else:
@@ -393,12 +393,12 @@ def event2alignment(events, hop_length=256, sampling_rate=22050):
     cur_event = -1
     for event in events:
         for i in range(len(event)):
-            if len(event) == 1 or cur_event == -1 or event[i][0] != event[i-1][0]:
+            if len(event) == 1 or cur_event == -1 or event[i][0] != event[i - 1][0]:
                 cur_event += 1
             token, freq, start_time, end_time = event[i]
-            alignment[cur_event, int(start_time/frame_length):int(end_time/frame_length)] = 1
+            alignment[cur_event, int(start_time / frame_length):int(end_time / frame_length)] = 1
 
-    return alignment[:cur_event+1]
+    return alignment[:cur_event + 1]
 
 
 def event2f0(events, hop_length=256, sampling_rate=22050):
@@ -409,7 +409,7 @@ def event2f0(events, hop_length=256, sampling_rate=22050):
     for event in events:
         for i in range(len(event)):
             token, freq, start_time, end_time = event[i]
-            f0s[0, int(start_time/frame_length):int(end_time/frame_length)] = freq
+            f0s[0, int(start_time / frame_length):int(end_time / frame_length)] = freq
 
     return f0s
 
@@ -418,7 +418,7 @@ def event2text(events, convert_stress, cmudict=None):
     text_clean = ''
     for event in events:
         for i in range(len(event)):
-            if i > 0 and event[i][0] == event[i-1][0]:
+            if i > 0 and event[i][0] == event[i - 1][0]:
                 continue
             if event[i][0] == ' ' and len(event) > 1:
                 if text_clean[-1] != "}":
@@ -494,6 +494,7 @@ def fix_arpabet(event):
 
 if __name__ == "__main__":
     import argparse
+
     # Get defaults so it can work with no Sacred
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', "--filepath", required=True)

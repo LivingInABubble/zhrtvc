@@ -1,9 +1,10 @@
+import collections as clt
 import os
+from pathlib import Path
+
 import aukit
 import numpy as np
-import collections as clt
 from cycler import cycle
-from pathlib import Path
 from tqdm import tqdm
 
 _sr = 16000

@@ -24,15 +24,15 @@
 
 import torch
 import torch.nn as nn
-import torch.nn.init as init
 import torch.nn.functional as F
+import torch.nn.init as init
 
 
 class ReferenceEncoder(nn.Module):
-    '''
+    """
     inputs --- [N, Ty/r, n_mels*r]  mels
     outputs --- [N, ref_enc_gru_size]
-    '''
+    """
 
     def __init__(self, hp):
 
@@ -78,9 +78,10 @@ class ReferenceEncoder(nn.Module):
 
 
 class STL(nn.Module):
-    '''
+    """
     inputs --- [N, token_embedding_size//2]
-    '''
+    """
+
     def __init__(self, hp):
         super().__init__()
         self.embed = nn.Parameter(torch.FloatTensor(hp.token_num, hp.token_embedding_size // hp.num_heads))
@@ -95,20 +96,22 @@ class STL(nn.Module):
     def forward(self, inputs):
         N = inputs.size(0)
         query = inputs.unsqueeze(1)
-        keys = torch.tanh(self.embed).unsqueeze(0).expand(N, -1, -1)  # [N, token_num, token_embedding_size // num_heads]
+        keys = torch.tanh(self.embed).unsqueeze(0).expand(N, -1,
+                                                          -1)  # [N, token_num, token_embedding_size // num_heads]
         style_embed = self.attention(query, keys)
 
         return style_embed
 
 
 class MultiHeadAttention(nn.Module):
-    '''
+    """
     input:
         query --- [N, T_q, query_dim]
         key --- [N, T_k, key_dim]
     output:
         out --- [N, T_q, num_units]
-    '''
+    """
+
     def __init__(self, query_dim, key_dim, num_units, num_heads):
         super().__init__()
         self.num_units = num_units

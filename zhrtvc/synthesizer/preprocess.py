@@ -1,17 +1,19 @@
-from multiprocessing.pool import Pool
-from synthesizer.utils import audio
 from functools import partial
 from itertools import chain
-from encoder import inference as encoder
+from multiprocessing.pool import Pool
 from pathlib import Path
-from utils import logmmse
-from tqdm import tqdm
-import numpy as np
+
 import librosa
+import numpy as np
+from tqdm import tqdm
+
+from encoder import inference as encoder
+from encoder.audio import preprocess_wav
+from synthesizer.utils import audio
+from utils import logmmse
 
 
-def preprocess_librispeech(datasets_root: Path, out_dir: Path, n_processes: int,
-                           skip_existing: bool, hparams):
+def preprocess_librispeech(datasets_root: Path, out_dir: Path, n_processes: int, skip_existing: bool, hparams):
     # Gather the input directories
     dataset_root = datasets_root.joinpath("wavs")
     input_dirs = [dataset_root]
@@ -49,8 +51,7 @@ def preprocess_librispeech(datasets_root: Path, out_dir: Path, n_processes: int,
     print("Max audio timesteps length: %d" % max(int(m[3]) for m in metadata))
 
 
-def preprocess_user(datasets_root: Path, out_dir: Path, n_processes: int,
-                    skip_existing: bool, hparams, datasets=None):
+def preprocess_user(datasets_root: Path, out_dir: Path, n_processes: int, skip_existing: bool, hparams, datasets=None):
     """
     目录格式样例：
     datasets_root: E:\data\biaobei
@@ -230,7 +231,7 @@ def split_on_silences(wav_fpath, words, end_times, hparams):
 
 def process_utterance(wav_fpath: np.ndarray, text: str, out_dir: Path, basename: str,
                       skip_existing: bool, hparams):
-    ## FOR REFERENCE:
+    # FOR REFERENCE:
     # For you not to lose your head if you ever wish to change things here or implement your own
     # synthesizer.
     # - Both the audios and the mel spectrograms are saved as numpy arrays
@@ -292,7 +293,7 @@ def embed_utterance(fpaths, encoder_model_fpath, hparams):
     if hparams.rescale:
         wav = wav / np.abs(wav).max() * hparams.rescaling_max
 
-    wav = encoder.preprocess_wav(wav)
+    wav = preprocess_wav(wav)
     embed = encoder.embed_utterance(wav)
     np.save(embed_fpath, embed, allow_pickle=False)
 

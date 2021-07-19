@@ -1,17 +1,17 @@
-from melgan.mel2wav.dataset import AudioDataset
-from melgan.mel2wav.modules import Generator, Discriminator, Audio2Mel
-from melgan.mel2wav.utils import save_sample
+import argparse
+import time
+from pathlib import Path
 
+import numpy as np
 import torch
 import torch.nn.functional as F
+import yaml
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-import yaml
-import numpy as np
-import time
-import argparse
-from pathlib import Path
+from melgan.mel2wav.dataset import AudioDataset
+from melgan.mel2wav.modules import Generator, Discriminator, Audio2Mel
+from melgan.mel2wav.utils import save_sample
 
 
 def parse_args():

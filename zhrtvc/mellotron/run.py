@@ -5,17 +5,11 @@
 """
 """
 from pathlib import Path
-from functools import partial
-from multiprocessing.pool import Pool
+
+import librosa
+import numpy as np
 from matplotlib import pyplot as plt
 from tqdm import tqdm
-import collections as clt
-import os
-import re
-import json
-import numpy as np
-import shutil
-import librosa
 
 
 def gen_filelists():
@@ -52,7 +46,6 @@ def read(fpath):
 
 
 def load_flac():
-    from scipy.io import wavfile
     import librosa
     inpath = r"E:/data/librispeech/LibriSpeech/test-clean/LibriSpeech/test-clean/1089/134686/1089-134686-0000.flac"
     inpath = r"E:\data\record\kdd\wavs\kdd-4253.wav"
@@ -121,11 +114,9 @@ def run_umap():
     pca_model = pca.fit(data_train)
     top_data_16 = pca_model.transform(data)
 
-
     # n_neighbors确定使用的相邻点的数量
     # min_dist控制允许嵌入的紧密程度。值越大，嵌入点的分布越均匀
     # 让我们可视化一下这个变换：
-
 
     # umap_model = umap.UMAP(n_neighbors=5, min_dist=0.1, n_components=2)
     # out_model = umap_model.fit(data)
@@ -138,9 +129,6 @@ def run_umap():
     # plt.scatter(umap_data[:, 2], umap_data[:, 0])
     # plt.show()
 
-
-
-    from sklearn.metrics.pairwise import paired_cosine_distances
     from sklearn.metrics.pairwise import cosine_similarity
 
     plt.subplot('331')
@@ -162,7 +150,6 @@ def run_umap():
     plt.subplot('339')
     plt.imshow(cosine_similarity(ica_data_3, ica_data_3))
 
-
     plt.show()
 
 
@@ -176,6 +163,7 @@ def combine_train_txt(*args, outpath):
     with open(outpath, 'wt', encoding='utf8') as fout:
         for line in outs:
             fout.write(line)
+
 
 if __name__ == "__main__":
     print(__file__)

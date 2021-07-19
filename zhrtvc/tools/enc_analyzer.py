@@ -4,9 +4,10 @@
 # date: 2019/11/30
 """
 """
-import numpy as np
 import collections as clt
-from sklearn.metrics.pairwise import cosine_similarity, pairwise_distances
+
+import numpy as np
+from sklearn.metrics.pairwise import pairwise_distances
 
 
 def get_refs(data: list, num=3):
@@ -35,6 +36,7 @@ def get_speakers(data: list, num=3):
         if len(outs) >= num:
             break
     return outs
+
 
 if __name__ == "__main__":
     print(__file__)

@@ -4,23 +4,24 @@
 # date: 2020/2/23
 """
 """
-from pathlib import Path
-import logging
-import sys
 import os
+import sys
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(Path(__file__).stem)
+# from pathlib import Path
+# import logging
+
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(Path(__file__).stem)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# from utils.argutils import print_args
-from melgan.train import train_melgan, parse_args
 
-args = parse_args()
+def main():
+    # from utils.argutils import print_args
+    from melgan.train import train_melgan, parse_args
 
-os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
+    args = parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.cuda
 
-if __name__ == "__main__":
     try:
         from setproctitle import setproctitle
 
@@ -30,3 +31,7 @@ if __name__ == "__main__":
 
     # print_args(args, parser)
     train_melgan(args)
+
+
+if __name__ == '__main__':
+    main()

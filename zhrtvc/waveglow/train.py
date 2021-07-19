@@ -27,26 +27,27 @@
 import argparse
 import json
 import os
-import yaml
-import traceback
 import shutil
+import traceback
 from pathlib import Path
-from tqdm import tqdm
-import torch
-from matplotlib import pyplot as plt
+
 import numpy as np
-import torch.nn.functional as F
+import torch
+import yaml
+from matplotlib import pyplot as plt
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+from tqdm import tqdm
 
 # =====START: ADDED FOR DISTRIBUTED======
 from .distributed import init_distributed, apply_gradient_allreduce, reduce_tensor
-from torch.utils.data.distributed import DistributedSampler
-# =====END:   ADDED FOR DISTRIBUTED======
-
-from torch.utils.data import DataLoader
 from .glow import WaveGlow, WaveGlowLoss
 from .mel2samp import Mel2Samp
 
+# =====END:   ADDED FOR DISTRIBUTED======
+
 _device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 
 def plot_spectrogram_to_numpy(spectrogram):
     fig, ax = plt.subplots(figsize=(12, 3))

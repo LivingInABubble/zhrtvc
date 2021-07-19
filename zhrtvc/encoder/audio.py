@@ -1,11 +1,13 @@
-from scipy.ndimage.morphology import binary_dilation
-from encoder.params_data import *
+import struct
 from pathlib import Path
 from typing import Optional, Union
+
+import librosa
 import numpy as np
 import webrtcvad
-import librosa
-import struct
+from scipy.ndimage.morphology import binary_dilation
+
+from encoder.params_data import *
 
 int16_max = (2 ** 15) - 1
 

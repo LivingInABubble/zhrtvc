@@ -1,10 +1,15 @@
-import logging
 import os
 import sys
 from argparse import ArgumentParser
 
 import torch
 import yaml
+
+# import logging
+# from pathlib import Path
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(Path(__file__).stem)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def parse_args():
@@ -31,11 +36,6 @@ def parse_args():
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
-    # from pathlib import Path
-    # logger = logging.getLogger(Path(__file__).stem)
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
     from mellotron.hparams import create_hparams
     from mellotron.train import train, json_dump, yaml_dump
 

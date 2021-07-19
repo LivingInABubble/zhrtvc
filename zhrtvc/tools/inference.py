@@ -4,17 +4,7 @@
 # date: 2020/4/6
 """
 """
-from pathlib import Path
-from functools import partial
-from multiprocessing.pool import Pool
-from matplotlib import pyplot as plt
-from tqdm import tqdm
-import collections as clt
-import os
-import re
 import json
-import numpy as np
-import shutil
 import time
 
 
@@ -28,7 +18,6 @@ def get_ipynb():
         print(out)
 
 
-import matplotlib
 import matplotlib.pyplot as plt
 import IPython.display as ipd
 
@@ -38,20 +27,18 @@ sys.path.append('waveglow/')
 
 from itertools import cycle
 import numpy as np
-import scipy as sp
 from scipy.io.wavfile import write
 import pandas as pd
 import librosa
 import torch
 
 from hparams import create_hparams
-from model import Tacotron2, load_model
+from model import load_model
 from waveglow.denoiser import Denoiser
 from layers import TacotronSTFT
 from data_utils import TextMelLoader, TextMelCollate
 from text import cmudict, text_to_sequence
 from mellotron_utils import get_data_from_musicxml
-from utils import inv_linear_spectrogram
 from melgan.inference import load_vocoder_melgan, infer_waveform_melgan
 
 import aukit
@@ -339,6 +326,7 @@ def singing_voice_v2():
     # write("audio_stereo.wav", hparams.sampling_rate, audio_stereo)
     # ipd.Audio([audio_stereo[:, 0], audio_stereo[:, 1]], rate=hparams.sampling_rate)
 
+
 def griffinlim():
     # magnitudes = magnitudes.data
     # mel_output = torch.matmul(self.mel_basis, magnitudes)
@@ -364,7 +352,6 @@ def waveglow():
             wavs = waveglow_model.infer(mels, sigma=1.0)
         return wavs
 
-
     from mellotron.inference import transform_mel
 
     audio_ref, sr_ref = aukit.load_wav(audio, sr=None, with_sr=True)
@@ -373,6 +360,7 @@ def waveglow():
 
     wav_inputs = waveglow_vocoder(torch.from_numpy(spec_ref[None]))
     wav_ref = wav_inputs[0].cpu().numpy()
+
 
 if __name__ == "__main__":
     print(__file__)

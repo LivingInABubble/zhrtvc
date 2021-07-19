@@ -1,20 +1,21 @@
-import random
 import json
-import torch
+import random
+
 import numpy as np
+import torch
 from tensorboardX import SummaryWriter
 
+from .layers import TacotronSTFT
 from .plotting_utils import plot_alignment_to_numpy, plot_spectrogram_to_numpy
 from .plotting_utils import plot_gate_outputs_to_numpy
 # from .utils import inv_linearspectrogram, default_hparams
 from .text import sequence_to_text
-from .layers import TacotronSTFT
 
 
 class Tacotron2Logger(SummaryWriter):
     def __init__(self, logdir, hparams=None):
         super(Tacotron2Logger, self).__init__(logdir, max_queue=100, filename_suffix='.tensorboard')
-        self.stft = TacotronSTFT(**{k: v for k, v in hparams.items()})
+        self.stft = TacotronSTFT()
 
     def log_training(self, reduced_loss, grad_norm, learning_rate, duration,
                      iteration):

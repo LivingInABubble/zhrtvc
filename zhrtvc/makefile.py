@@ -1,11 +1,10 @@
-from pathlib import Path
-import logging
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(Path(__file__).stem)
-
-import os
 import datetime
+import logging
+import os
+from pathlib import Path
+
+logger = logging.getLogger(Path(__file__).stem)
+logger.info(__file__)
 
 
 def make_document():
@@ -108,15 +107,15 @@ def pip_install_requirements(reqspath=''):
 
 
 if __name__ == "__main__":
-    logger.info(__file__)
+    logging.basicConfig(level=logging.INFO)
     import sys
 
     if len(sys.argv) == 2:
         pip_install_requirements(sys.argv[1])
     else:
         pip_install_requirements()
-
-        os.system(r'pip install torch==1.7.0+cpu torchvision==0.8.0 torchaudio==0.7.0 -f https://download.pytorch.org/whl/torch_stable.html')
+        os.system(
+            r'pip install torch==1.7.0+cpu torchvision==0.8.0 torchaudio==0.7.0 -f https://download.pytorch.org/whl/torch_stable.html')
         logger.info(f'pip install torch==1.7.0+cpu done.')
     # make_requirements()
     # make_gitignore()

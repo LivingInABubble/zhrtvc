@@ -1,7 +1,7 @@
-from pathlib import Path
-import numpy as np
 import argparse
-import json
+from pathlib import Path
+
+import numpy as np
 
 _type_priorities = [  # In decreasing order
     Path,

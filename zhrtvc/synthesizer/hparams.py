@@ -1,7 +1,8 @@
 # from tensorflow.contrib.training import HParams
 # from aukit.audio_io import Dict2Obj
-from dotmap import DotMap
 import json
+
+from dotmap import DotMap
 
 
 class Dict2Obj(DotMap):

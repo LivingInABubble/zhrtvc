@@ -1,14 +1,13 @@
-from .modules import Generator, Audio2Mel
-
-from pathlib import Path
-import yaml
-import torch
-import os
 import json
-import numpy as np
+from pathlib import Path
 
-from aukit.audio_griffinlim import mel_spectrogram, default_hparams
+import numpy as np
+import torch
+import yaml
 from aukit import Dict2Obj
+from aukit.audio_griffinlim import mel_spectrogram, default_hparams
+
+from .modules import Generator, Audio2Mel
 
 
 def get_default_device():

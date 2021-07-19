@@ -1,19 +1,21 @@
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import *
-from encoder.inference import plot_embedding_as_heatmap
-from toolbox.utterance import Utterance
+import sys
 from pathlib import Path
+# from sklearn.manifold import TSNE         # You can try with TSNE if you like, I prefer UMAP
+from time import sleep
 from typing import List, Set
-import sounddevice as sd
+from warnings import filterwarnings
+
 import matplotlib.pyplot as plt
 import numpy as np
-# from sklearn.manifold import TSNE         # You can try with TSNE if you like, I prefer UMAP 
-from time import sleep
+import sounddevice as sd
 import umap
-import sys
-from warnings import filterwarnings
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog, QFileDialog, QApplication, QGridLayout, QVBoxLayout, QPushButton, QComboBox, \
+    QLabel, QCheckBox, QPlainTextEdit, QHBoxLayout, QProgressBar, QDesktopWidget
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
+from encoder.inference import plot_embedding_as_heatmap
+from toolbox.utterance import Utterance
 
 filterwarnings("ignore")
 
@@ -69,13 +71,11 @@ class UI(QDialog):
     def draw_spec(self, spec, which):
         axs = self.current_ax if which == "current" else self.gen_ax
         spec_ax = axs[1]
-        ## Spectrogram
         # Draw the spectrogram
         spec_ax.clear()
         if spec is not None:
             im = spec_ax.imshow(spec, aspect="auto", interpolation="none")
-            # spec_ax.figure.colorbar(mappable=im, shrink=0.65, orientation="horizontal", 
-            # spec_ax=spec_ax)
+            # spec_ax.figure.colorbar(mappable=im, shrink=0.65, orientation="horizontal", spec_ax=spec_ax)
             spec_ax.set_title("spectrogram")
 
         spec_ax.set_xticks([])
@@ -88,13 +88,11 @@ class UI(QDialog):
         axs = self.current_ax if which == "current" else self.gen_ax
         title = "preprocessed spectrogram" if which == "current" else "alignment"
         align_ax = axs[2]
-        ## Spectrogram
         # Draw the spectrogram
         align_ax.clear()
         if align is not None:
             im = align_ax.pcolor(align)
-            # align_ax.figure.colorbar(mappable=im, shrink=0.65, orientation="horizontal",
-            # align_ax=align_ax)
+            # align_ax.figure.colorbar(mappable=im, shrink=0.65, orientation="horizontal", align_ax=align_ax)
             align_ax.set_title(title)
 
         align_ax.set_xticks([])
@@ -111,15 +109,13 @@ class UI(QDialog):
         # Display a message if there aren't enough points
         if len(utterances) < self.min_umap_points:
             self.umap_ax.text(.5, .5, "Add %d more points to\ngenerate the projections" %
-                              (self.min_umap_points - len(utterances)),
-                              horizontalalignment='center', fontsize=15)
+                              (self.min_umap_points - len(utterances)), horizontalalignment='center', fontsize=15)
             self.umap_ax.set_title("")
 
         # Compute the projections
         else:
             if not self.umap_hot:
-                self.log(
-                    "Drawing UMAP projections for the first time, this will take a few seconds.")
+                self.log("Drawing UMAP projections for the first time, this will take a few seconds.")
                 self.umap_hot = True
 
             reducer = umap.UMAP(int(np.ceil(np.sqrt(len(embeds)))), metric="cosine")
@@ -132,8 +128,7 @@ class UI(QDialog):
                 mark = "x" if "_gen_" in utterance.name else "o"
                 label = None if utterance.speaker_name in speakers_done else utterance.speaker_name
                 speakers_done.add(utterance.speaker_name)
-                self.umap_ax.scatter(projection[0], projection[1], c=[color], marker=mark,
-                                     label=label)
+                self.umap_ax.scatter(projection[0], projection[1], c=[color], marker=mark, label=label)
             # self.umap_ax.set_title("UMAP projections")
             self.umap_ax.legend(prop={'size': 10})
 
@@ -200,8 +195,7 @@ class UI(QDialog):
     @staticmethod
     def repopulate_box(box, items, random=False):
         """
-        Resets a box and adds a list of items. Pass a list of (item, data) pairs instead to join 
-        data to the items
+        Resets a box and adds a list of items. Pass a list of (item, data) pairs instead to join data to the items
         """
         box.blockSignals(True)
         box.clear()
@@ -213,21 +207,23 @@ class UI(QDialog):
         box.setDisabled(len(items) == 0)
         box.blockSignals(False)
 
-    def populate_browser(self, datasets_root: Path, recognized_datasets: List, level: int,
-                         random=True):
+    def populate_browser(self, datasets_root: Path, recognized_datasets: List, level: int, random=True):
         # Select a random dataset
         if level <= 0:
             if datasets_root is not None:
                 datasets = [datasets_root.joinpath(d) for d in recognized_datasets]
                 datasets = [d.relative_to(datasets_root) for d in datasets if d.exists()]
                 self.browser_load_button.setDisabled(len(datasets) == 0)
+
             if datasets_root is None or len(datasets) == 0:
-                msg = "Warning: you d" + ("id not pass a root directory for datasets as argument" \
-                                              if datasets_root is None else "o not have any of the recognized datasets" \
-                                                                            " in %s" % datasets_root)
+                if datasets_root is None:
+                    msg = "id not pass a root directory for datasets as argument"
+                else:
+                    msg = "o not have any of the recognized datasets in %s" % datasets_root
+                msg = "Warning: you d" + msg
                 self.log(msg)
-                msg += ".\nThe recognized datasets are:\n\t%s\nFeel free to add your own. You " \
-                       "can still use the toolbox by recording samples yourself." % \
+                msg += ".\nThe recognized datasets are:\n\t%s\nFeel free to add your own. " \
+                       "You can still use the toolbox by recording samples yourself." % \
                        ("\n\t".join(recognized_datasets))
                 print(msg, file=sys.stderr)
 
@@ -248,10 +244,7 @@ class UI(QDialog):
 
         # Select a random utterance
         if level <= 2:
-            utterances_root = datasets_root.joinpath(
-                self.current_dataset_name,
-                self.current_speaker_name
-            )
+            utterances_root = datasets_root.joinpath(self.current_dataset_name, self.current_speaker_name)
             utterances = []
             for extension in ['mp3', 'flac', 'wav', 'm4a']:
                 utterances.extend(Path(utterances_root).glob("**/*.%s" % extension))
@@ -274,8 +267,7 @@ class UI(QDialog):
     def current_vocoder_fpath(self):
         return self.vocoder_box.itemData(self.vocoder_box.currentIndex())
 
-    def populate_models(self, encoder_models_dir: Path, synthesizer_models_dir: Path,
-                        vocoder_models_dir: Path):
+    def populate_models(self, encoder_models_dir: Path, synthesizer_models_dir: Path, vocoder_models_dir: Path):
         # Encoder
         encoder_fpaths = list(encoder_models_dir.glob("*.pt"))
         if len(encoder_fpaths) == 0:
@@ -286,9 +278,9 @@ class UI(QDialog):
         synthesizer_model_dirs = list(synthesizer_models_dir.glob("*"))
         synthesizer_items = [(f.name.replace("logs-", ""), f) for f in synthesizer_model_dirs]
         if len(synthesizer_model_dirs) == 0:
-            raise Exception("No synthesizer models found in %s. For the synthesizer, the expected "
-                            "structure is <syn_models_dir>/logs-<model_name>/taco_pretrained/"
-                            "checkpoint" % synthesizer_models_dir)
+            raise Exception("No synthesizer models found in %s. "
+                            "For the synthesizer, the expected structure is "
+                            "<syn_models_dir>/logs-<model_name>/taco_pretrained/checkpoint" % synthesizer_models_dir)
         self.repopulate_box(self.synthesizer_box, synthesizer_items)
 
         # Vocoder
@@ -351,12 +343,12 @@ class UI(QDialog):
         [self.log("") for _ in range(self.max_log_lines)]
 
     def __init__(self):
-        ## Initialize the application
+        # Initialize the application
         self.app = QApplication(sys.argv)
         super().__init__(None)
         self.setWindowTitle("SV2TTS toolbox")
 
-        ## Main layouts
+        # Main layouts
         # Root
         root_layout = QGridLayout()
         self.setLayout(root_layout)
@@ -377,7 +369,7 @@ class UI(QDialog):
         self.projections_layout = QVBoxLayout()
         root_layout.addLayout(self.projections_layout, 1, 0)
 
-        ## Projections
+        # Projections
         # UMap
         fig, self.umap_ax = plt.subplots(figsize=(4, 4), facecolor="#F0F0F0")
         fig.subplots_adjust(left=0.02, bottom=0.02, right=0.98, top=0.98)
@@ -386,7 +378,7 @@ class UI(QDialog):
         self.clear_button = QPushButton("Clear")
         self.projections_layout.addWidget(self.clear_button)
 
-        ## Browser
+        # Browser
         # Dataset, speaker and utterance selection
         i = 0
         self.dataset_box = QComboBox()
@@ -448,7 +440,7 @@ class UI(QDialog):
         browser_layout.addWidget(self.vocoder_box, i + 1, 2)
         i += 2
 
-        ## Embed & spectrograms
+        # Embed & spectrograms
         vis_layout.addStretch()
 
         gridspec_kw_current = {"width_ratios": [1, 2, 2]}  # embed,spectrogram
@@ -468,7 +460,7 @@ class UI(QDialog):
             for side in ["top", "right", "bottom", "left"]:
                 ax.spines[side].set_visible(False)
 
-        ## Generation
+        # Generation
         self.text_prompt = QPlainTextEdit(default_text)
         gen_layout.addWidget(self.text_prompt, stretch=1)
 
@@ -495,11 +487,11 @@ class UI(QDialog):
         self.logs = []
         gen_layout.addStretch()
 
-        ## Set the size of the window and of the elements
+        # Set the size of the window and of the elements
         max_size = QDesktopWidget().availableGeometry(self).size() * 0.8
         self.resize(max_size)
 
-        ## Finalize the display
+        # Finalize the display
         self.reset_interface()
         self.show()
 

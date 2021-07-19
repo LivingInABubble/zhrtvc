@@ -1,23 +1,24 @@
-from toolbox.ui import UI
-from encoder import inference as encoder
-from synthesizer.inference import Synthesizer
-from vocoder import inference as vocoder
-from melgan import inference as vocoder_melgan
+import json
+import os
+import re
+import sys
+import time
+import traceback
 from pathlib import Path
 from time import perf_counter as timer
-from toolbox.utterance import Utterance
+
 import numpy as np
-import traceback
-import sys
-import re
-import time
-import os
-import json
-from synthesizer.utils import audio
-
+from aukit import remove_noise, Dict2Obj
+from aukit.audio_griffinlim import save_wav
 from aukit.audio_normalizer import trim_long_silences
-import aukit
 
+from encoder import inference as encoder
+from encoder.audio import preprocess_wav
+from melgan import inference as vocoder_melgan
+from synthesizer.inference import Synthesizer
+from toolbox.ui import UI
+from toolbox.utterance import Utterance
+from vocoder import inference as vocoder
 from .sentence import xinqing_texts
 
 # Use this directory structure for your datasets, or modify it to fit your needs
@@ -36,7 +37,6 @@ def filename_add_suffix(x, s):
 
 
 time_formatter = lambda: time.strftime("%Y%m%d-%H%M%S")
-
 total_texts = xinqing_texts
 
 
@@ -141,9 +141,7 @@ class Toolbox:
 
     def load_from_browser(self, fpath=None):
         if fpath is None:
-            fpath = Path(self.datasets_root,
-                         self.ui.current_dataset_name,
-                         self.ui.current_speaker_name,
+            fpath = Path(self.datasets_root, self.ui.current_dataset_name, self.ui.current_speaker_name,
                          self.ui.current_utterance_name)
             # name = '/'.join(fpath.relative_to(self.datasets_root).parts)
             dat = self.ui.current_dataset_name.replace("\\", "#").replace("/", "#")
@@ -189,8 +187,8 @@ class Toolbox:
 
     def preprocess(self):
         wav = self.ui.selected_utterance.wav
-        out = aukit.remove_noise(wav, sr=Synthesizer.sample_rate)
-        hp = aukit.Dict2Obj({})
+        out = remove_noise(wav, sr=Synthesizer.sample_rate)
+        hp = Dict2Obj({})
         hp["vad_window_length"] = 10  # milliseconds
         hp["vad_moving_average_width"] = 2
         hp["vad_max_silence_length"] = 2
@@ -216,7 +214,7 @@ class Toolbox:
         speaker_name = "user01"
         name = speaker_name + "_rec_{}".format(time_formatter())
         fpath = self._out_record_dir.joinpath(name + '.wav')
-        audio.save_wav(wav, fpath, encoder.sampling_rate)  # save
+        save_wav(wav, fpath, encoder.sampling_rate)  # save
         wav = Synthesizer.load_preprocess_wav(fpath)  # 保持一致的数据格式
 
         self.add_real_utterance(wav, name, speaker_name)
@@ -229,7 +227,7 @@ class Toolbox:
         # Compute the embedding
         if not encoder.is_loaded():
             self.init_encoder()
-        encoder_wav = encoder.preprocess_wav(wav)
+        encoder_wav = preprocess_wav(wav)
         embed, partial_embeds, _ = encoder.embed_utterance(encoder_wav, return_partials=True)
 
         np.save(self._out_embed_dir.joinpath(name + '.npy'), embed, allow_pickle=False)  # save
@@ -255,9 +253,9 @@ class Toolbox:
         if self.synthesizer is None:
             model_dir = Path(self.ui.current_synthesizer_model_dir)
             checkpoints_dir = model_dir.joinpath("checkpoints")
-            hp_path = model_dir.joinpath("metas", "hparams.json")    # load from trained models
+            hp_path = model_dir.joinpath("metas", "hparams.json")  # load from trained models
             if hp_path.exists():
-                hparams = aukit.Dict2Obj(json.load(open(hp_path, encoding="utf8")))
+                hparams = Dict2Obj(json.load(open(hp_path, encoding="utf8")))
             else:
                 hparams = None
             self.synthesizer = Synthesizer(checkpoints_dir, low_mem=self.low_mem, hparams=hparams)
@@ -306,10 +304,10 @@ class Toolbox:
         if self.ui.current_vocoder_fpath is not None:
             model_fpath = self.ui.current_vocoder_fpath
             vocname = Path(model_fpath).parent.stem
+
             if Path(model_fpath).parent.stem == "melgan":
                 self.ui.log("Waveform generation with MelGAN... ")
                 wav = vocoder_melgan.infer_waveform_melgan(spec, model_fpath)
-
             elif Path(model_fpath).parent.stem == "wavernn":
                 self.ui.log("Waveform generation with WaveRNN... ")
                 wav = vocoder.infer_waveform(spec, progress_callback=vocoder_progress)
@@ -318,6 +316,7 @@ class Toolbox:
             vocname = "griffinlim"
             self.ui.log("Waveform generation with Griffin-Lim... ")
             wav = Synthesizer.griffin_lim(spec)
+
         self.ui.set_loading(0)
         self.ui.log(" Done!", "append")
 
@@ -331,13 +330,14 @@ class Toolbox:
         fms = int(len(wav) * 1000 / Synthesizer.sample_rate)
         fvoc = vocname
         fname = filename_formatter('{}_{}_{}_{}ms_{}.wav'.format(fref, ftime, fvoc, fms, ftext))
-        audio.save_wav(wav, self._out_wav_dir.joinpath(fname), Synthesizer.sample_rate)  # save
+        save_wav(wav, self._out_wav_dir.joinpath(fname), Synthesizer.sample_rate)  # save
 
         # Compute the embedding
         # TODO: this is problematic with different sampling rates, gotta fix it
         if not encoder.is_loaded():
             self.init_encoder()
-        encoder_wav = encoder.preprocess_wav(wav)
+
+        encoder_wav = preprocess_wav(wav)
         embed, partial_embeds, _ = encoder.embed_utterance(encoder_wav, return_partials=True)
 
         # Add the utterance
@@ -371,11 +371,13 @@ class Toolbox:
             self.ui.log("Loading the vocoder %s... " % model_fpath)
             self.ui.set_loading(1)
             start = timer()
+
             if Path(model_fpath).parent.stem == "melgan":
                 vocoder_melgan.load_vocoder_melgan(model_fpath)
             elif Path(model_fpath).parent.stem == "wavernn":
                 vocoder.load_model(model_fpath)
             else:
                 return
+
             self.ui.log("Done (%dms)." % int(1000 * (timer() - start)), "append")
             self.ui.set_loading(0)

@@ -1,14 +1,13 @@
-import torch
-import torch.utils.data
-import torch.nn.functional as F
+import random
+from pathlib import Path
 
+import librosa
+import numpy as np
+import torch
+import torch.nn.functional as F
+import torch.utils.data
 from librosa.core import load
 from librosa.util import normalize
-import librosa
-
-from pathlib import Path
-import numpy as np
-import random
 
 
 def files_to_list(filename):

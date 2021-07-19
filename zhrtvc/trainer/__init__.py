@@ -3,10 +3,10 @@
 """
 trainer
 """
-from pathlib import Path
 import logging
-import sys
 import os
+import sys
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(Path(__file__).stem)

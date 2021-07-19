@@ -1,12 +1,13 @@
-from encoder.params_data import *
-from encoder.model import SpeakerEncoder
-from encoder.audio import preprocess_wav  # We want to expose this function from here
-from matplotlib import cm
-from encoder import audio
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from matplotlib import cm
+
+from encoder import audio
+from encoder.model import SpeakerEncoder
+from encoder.params_data import partials_n_frames, sampling_rate, mel_window_step
 
 _model = None  # type: SpeakerEncoder
 _device = torch.device('cpu')  # None # type: torch.device
@@ -57,8 +58,7 @@ def embed_frames_batch(frames_batch):
     return embed
 
 
-def compute_partial_slices(n_samples, partial_utterance_n_frames=partials_n_frames,
-                           min_pad_coverage=0.75, overlap=0.5):
+def compute_partial_slices(n_samples, partial_utterance_n_frames=partials_n_frames, min_pad_coverage=0.75, overlap=0.5):
     """
     Computes where to split an utterance waveform and its corresponding mel spectrogram to obtain 
     partial utterances of <partial_utterance_n_frames> each. Both the waveform and the mel 
@@ -156,7 +156,7 @@ def embed_utterance(wav, using_partials=True, return_partials=False, **kwargs):
     return embed
 
 
-def embed_speaker(wavs, **kwargs):
+def embed_speaker():
     raise NotImplemented()
 
 
@@ -171,8 +171,9 @@ def plot_embedding_as_heatmap(embed, ax=None, title="", shape=None, color_range=
 
     cmap = cm.get_cmap()
     mappable = ax.imshow(embed, cmap=cmap)
-    cbar = plt.colorbar(mappable, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_clim(*color_range)
+    plt.colorbar(mappable, ax=ax, fraction=0.046, pad=0.04)
+    sm = cm.ScalarMappable(cmap=cmap)
+    sm.set_clim(*color_range)
 
     ax.set_xticks([]), ax.set_yticks([])
     ax.set_title(title)

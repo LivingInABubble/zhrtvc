@@ -24,21 +24,23 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # *****************************************************************************
+import argparse
 import os
+import subprocess
 import sys
 import time
-import subprocess
-import argparse
 
 import torch
 import torch.distributed as dist
 from torch.autograd import Variable
+
 
 def reduce_tensor(tensor, num_gpus):
     rt = tensor.clone()
     dist.all_reduce(rt, op=dist.reduce_op.SUM)
     rt /= num_gpus
     return rt
+
 
 def init_distributed(rank, num_gpus, group_name, dist_backend, dist_url):
     assert torch.cuda.is_available(), "Distributed mode requires CUDA."
@@ -51,6 +53,7 @@ def init_distributed(rank, num_gpus, group_name, dist_backend, dist_url):
     dist.init_process_group(dist_backend, init_method=dist_url,
                             world_size=num_gpus, rank=rank,
                             group_name=group_name)
+
 
 def _flatten_dense_tensors(tensors):
     """Flatten dense tensors into a contiguous 1D buffer. Assume tensors are of
@@ -67,6 +70,7 @@ def _flatten_dense_tensors(tensors):
         return tensors[0].contiguous().view(-1)
     flat = torch.cat([t.contiguous().view(-1) for t in tensors], dim=0)
     return flat
+
 
 def _unflatten_dense_tensors(flat, tensors):
     """View a flat buffer using the sizes of tensors. Assume that tensors are of
@@ -87,6 +91,7 @@ def _unflatten_dense_tensors(flat, tensors):
         offset += numel
     return tuple(outputs)
 
+
 def apply_gradient_allreduce(module):
     """
     Modifies existing model to do gradient allreduce, but doesn't change class
@@ -103,7 +108,7 @@ def apply_gradient_allreduce(module):
         dist.broadcast(p, 0)
 
     def allreduce_params():
-        if(module.needs_reduction):
+        if (module.needs_reduction):
             module.needs_reduction = False
             buckets = {}
             for param in module.parameters():
@@ -131,6 +136,7 @@ def apply_gradient_allreduce(module):
     for param in list(module.parameters()):
         def allreduce_hook(*unused):
             Variable._execution_engine.queue_callback(allreduce_params)
+
         if param.requires_grad:
             param.register_hook(allreduce_hook)
             dir(param)
@@ -163,7 +169,7 @@ def main(config, stdout_dir, args_str):
         stdout = None if i == 0 else open(
             os.path.join(stdout_dir, "GPU_{}.log".format(i)), "w")
         print(args_list)
-        p = subprocess.Popen([str(sys.executable)]+args_list, stdout=stdout)
+        p = subprocess.Popen([str(sys.executable)] + args_list, stdout=stdout)
         workers.append(p)
 
     for p in workers:

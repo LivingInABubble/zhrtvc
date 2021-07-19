@@ -1,10 +1,12 @@
-from synthesizer.utils.text import text_to_sequence
+import os
+
+import numpy as np
+import tensorflow as tf
+
 from synthesizer.infolog import log
 from synthesizer.models import create_model
 from synthesizer.utils import plot, audio
-import tensorflow as tf
-import numpy as np
-import os
+from synthesizer.utils.text import text_to_sequence
 
 
 class Tacotron2:

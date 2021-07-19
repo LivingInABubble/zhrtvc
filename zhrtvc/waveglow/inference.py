@@ -24,22 +24,24 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 # *****************************************************************************
+import os
 import sys
 
-sys.path.append('waveglow')
-import os
-from scipy.io.wavfile import write
 import torch
-from .mel2samp import files_to_list, MAX_WAV_VALUE
-from .denoiser import Denoiser
+from scipy.io.wavfile import write
+
+sys.path.append('waveglow')
 
 _model = None
 _denoiser = None
+
 
 def load_waveglow_model(model_path, device=None):
     """
     导入训练模型得到的checkpoint模型文件。
     """
+    from .denoiser import Denoiser
+
     global _model
     global _denoiser
     if device is None:
@@ -55,12 +57,15 @@ def load_waveglow_torch(model_path, device=None):
     """
     用torch.load直接导入模型文件，不需要导入模型代码。
     """
+    from .denoiser import Denoiser
+
     global _model
     global _denoiser
     if device is None:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     _model = torch.load(model_path, map_location=device)
     _denoiser = Denoiser(_model).to(device)
+
     return _model
 
 
@@ -83,23 +88,27 @@ def generate_wave(mel, **kwargs):
     if not is_loaded():
         load_waveglow_model(**kwargs)
     mel = torch.autograd.Variable(mel)
+
     with torch.no_grad():
         wav = _model.infer(mel, sigma=sigma)
         if denoiser_strength > 0:
             wav = _denoiser(wav, denoiser_strength)
             wav = wav.squeeze(0)
+
         return wav
 
 
-def main(mel_files, waveglow_path, sigma, output_dir, sampling_rate, is_fp16,
-         denoiser_strength):
+def main(mel_files, waveglow_path, sigma, output_dir, sampling_rate, is_fp16, denoiser_strength):
+    from .denoiser import Denoiser
+    from .mel2samp import files_to_list, MAX_WAV_VALUE
+
     mel_files = files_to_list(mel_files)
     waveglow = torch.load(waveglow_path)['model']
     waveglow = waveglow.remove_weightnorm(waveglow)
     waveglow.cuda().eval()
-    if is_fp16:
-        from apex import amp
-        waveglow, _ = amp.initialize(waveglow, [], opt_level="O3")
+    # if is_fp16:
+    #     from apex import amp
+    #     waveglow, _ = amp.initialize(waveglow, [], opt_level="O3")
 
     if denoiser_strength > 0:
         denoiser = Denoiser(waveglow).cuda()
@@ -114,6 +123,7 @@ def main(mel_files, waveglow_path, sigma, output_dir, sampling_rate, is_fp16,
             audio = waveglow.infer(mel, sigma=sigma)
             if denoiser_strength > 0:
                 audio = denoiser(audio, denoiser_strength)
+
             audio = audio * MAX_WAV_VALUE
         audio = audio.squeeze()
         audio = audio.cpu().numpy()
@@ -129,8 +139,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', "--filelist_path", required=True)
-    parser.add_argument('-w', '--waveglow_path',
-                        help='Path to waveglow decoder checkpoint with model')
+    parser.add_argument('-w', '--waveglow_path', help='Path to waveglow decoder checkpoint with model')
     parser.add_argument('-o', "--output_dir", required=True)
     parser.add_argument("-s", "--sigma", default=1.0, type=float)
     parser.add_argument("--sampling_rate", default=22050, type=int)
@@ -140,5 +149,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.filelist_path, args.waveglow_path, args.sigma, args.output_dir,
-         args.sampling_rate, args.is_fp16, args.denoiser_strength)
+    main(args.filelist_path, args.waveglow_path, args.sigma, args.output_dir, args.sampling_rate, args.is_fp16,
+         args.denoiser_strength)

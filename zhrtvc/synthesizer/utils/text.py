@@ -5,7 +5,6 @@
 """
 """
 from phkit.chinese import text_to_sequence, sequence_to_text
-from phkit.chinese import symbol_chinese as symbols
 
 if __name__ == "__main__":
     print(__file__)

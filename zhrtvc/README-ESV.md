@@ -1,13 +1,12 @@
 # 中文语音克隆
 
 ## 使用指引
-主要做synthesizer的部分，encoder和vocoder都用publish的模型。
-主要做语音合成器Mellotron，声码器MelGAN。
 
+主要做synthesizer的部分，encoder和vocoder都用publish的模型。 主要做语音合成器Mellotron，声码器MelGAN。
 
 ### 容器环境Docker
-镜像基于ubuntu18.04，python环境是python3.7版本，用anaconda的环境。
-必要依赖已经安装好，TensorFlow和Torch可以根据自己的实际情况安装。
+
+镜像基于ubuntu18.04，python环境是python3.7版本，用anaconda的环境。 必要依赖已经安装好，TensorFlow和Torch可以根据自己的实际情况安装。
 
 ```
 # 执行路径为Dockerfile文件所在目录的路径
@@ -109,7 +108,6 @@ optional arguments:
 音频文件相对路径\t文本内容\n
 ```
 
-
 - 例如：
 
 ```markdown
@@ -202,6 +200,7 @@ optional arguments:
 ```
 
 - 例如：
+
 ```markdown
 ../data/samples/aishell/S0093/BAC009S0093W0368.mp3|mel-aishell-S0093-BAC009S0093W0368.mp3.npy|embed-aishell-S0093-BAC009S0093W0368.mp3.npy|54656|216|有 着 对 美 和 品质 感 执着 的 追求
 ```
@@ -212,8 +211,8 @@ mel文件路径和embed文件路径可以是相对路径（相对于train.txt所
 
 如果多个数据一起用，可以用绝对路径表示，汇总到一个train.txt文件，便于训练。
 
-
 ### 语音合成器mellotron
+
 1. 训练mellotron模型。
 
 ```markdown
@@ -266,9 +265,10 @@ optional arguments:
 
 ```
 
-
 ### 声码器melgan
+
 1. 训练melgan模型。
+
 ```markdown
 usage: melgan_train.py [-h] [-i DATA_PATH] [-o SAVE_PATH]
                        [--load_path LOAD_PATH] [--start_step START_STEP]
@@ -319,7 +319,6 @@ optional arguments:
 
 ```
 
-
 2. 应用melgan模型
 
 ```markdown
@@ -343,41 +342,46 @@ optional arguments:
 ## 版本记录
 
 ### v1.2.1
+
 - 增加mellotron的推理inference模块。
 - 增加melgan的推理inference模块。
 - 优化模型保存方式。
 - 修正已知bugs。
 - 让训练变得优雅顺畅。
 
-
 ### v1.2.0
+
 - 整理mellotron模型，修正bugs，简化训练方法。
 - 整理melgan模型，提供synthesizer和mellotron适配的声码器参数。
 
-
 ### v1.1.9
+
 - 修正hparams报错的bug。
 - 修正toolbox显示的bug。
 - 确保samples能在synthesizer、melgan和mellotron上跑通。
 - 往后重点开发的合成器是mellotron。
 
 ### v1.1.7
+
 - 修改说明文档。
 - 修正已知BUG。
 - 增加实验的Mellotron的语音合成器模型。
 
 ### v1.1.5
+
 - 修正phkit依赖版本错误。
 - 提供项目的依赖及参考版本。
 - 提供用开源数据训练的模型。
 - 提供降噪和去除静音的预处理后的开源语料。
 
 ### v1.1.4
+
 - Update train melgan. Fix some bugs.
 - Update toolbox. Load synthesizer with hparams.
 - Add tools for joint audios to train.
 
 ### v1.1.3
+
 - 从aukit.audio_io模块导入Dict2Obj。
 - toolbox可视化显示合成的embed，alignment，spectrogram。
 - toolbox录音修正格式不一致的bug。
@@ -387,8 +391,8 @@ optional arguments:
 - 样例文本提供长句和短句。
 - 增加合成参考音频文本的按键Compare，对比参考语音和合成语音。
 
-
 ### v1.1.2
+
 - 语音和频谱的处理使用工具包：aukit，用pip install aukit即可。
 - 文本和音素的处理使用工具包：phkit，用pip install phkit即可。
 - 提供预训练好的encoder、synthesizer、vocoder模型和语音样例。
@@ -396,44 +400,52 @@ optional arguments:
 - 预训练的synthesizer模型用ali句子的dataset训练的，用alijuzi的dataset的语音做参考音频效果较好。
 - 重整模型和数据的目录结构，提供可训练的样例。
 
-
 ## 参考项目
 
 - **Real-Time Voice Cloning**
-This repository is an implementation of [Transfer Learning from Speaker Verification to
-Multispeaker Text-To-Speech Synthesis](https://arxiv.org/pdf/1806.04558.pdf) (SV2TTS) with a vocoder that works in real-time. Feel free to check [my thesis](https://matheo.uliege.be/handle/2268.2/6801) if you're curious or if you're looking for info I haven't documented yet (don't hesitate to make an issue for that too). Mostly I would recommend giving a quick look to the figures beyond the introduction.
+  This repository is an implementation
+  of [Transfer Learning from Speaker Verification to Multispeaker Text-To-Speech Synthesis](https://arxiv.org/pdf/1806.04558.pdf) (
+  SV2TTS) with a vocoder that works in real-time. Feel free to
+  check [my thesis](https://matheo.uliege.be/handle/2268.2/6801) if you're curious or if you're looking for info I
+  haven't documented yet (don't hesitate to make an issue for that too). Mostly I would recommend giving a quick look to
+  the figures beyond the introduction.
 
-SV2TTS is a three-stage deep learning framework that allows to create a numerical representation of a voice from a few seconds of audio, and to use it to condition a text-to-speech model trained to generalize to new voices.
+SV2TTS is a three-stage deep learning framework that allows to create a numerical representation of a voice from a few
+seconds of audio, and to use it to condition a text-to-speech model trained to generalize to new voices.
 
 **Video demonstration** (click the picture):
 
 [![Toolbox demo](https://i.imgur.com/Ixy13b7.png)](https://www.youtube.com/watch?v=-O_hYhToKoA)
 
+### Papers implemented
 
-
-### Papers implemented  
 | URL | Designation | Title | Implementation source |
 | --- | ----------- | ----- | --------------------- |
-|[**1806.04558**](https://arxiv.org/pdf/1806.04558.pdf) | **SV2TTS** | **Transfer Learning from Speaker Verification to Multispeaker Text-To-Speech Synthesis** | This repo |
+|[**1806.04558**](https://arxiv.org/pdf/1806.04558.pdf) | **SV2TTS** | **Transfer Learning from Speaker Verification to
+Multispeaker Text-To-Speech Synthesis** | This repo |
 |[1802.08435](https://arxiv.org/pdf/1802.08435.pdf) | WaveRNN (vocoder) | Efficient Neural Audio Synthesis | [fatchord/WaveRNN](https://github.com/fatchord/WaveRNN) |
 |[1712.05884](https://arxiv.org/pdf/1712.05884.pdf) | Tacotron 2 (synthesizer) | Natural TTS Synthesis by Conditioning Wavenet on Mel Spectrogram Predictions | [Rayhane-mamah/Tacotron-2](https://github.com/Rayhane-mamah/Tacotron-2)
 |[1710.10467](https://arxiv.org/pdf/1710.10467.pdf) | GE2E (encoder)| Generalized End-To-End Loss for Speaker Verification | This repo |
 
-
 ## Quick start
+
 ### Requirements
+
 You will need the following whether you plan to use the toolbox only or to retrain the models.
 
 **Python 3.7**. Python 3.6 might work too, but I wouldn't go lower because I make extensive use of pathlib.
 
-Run `pip install -r requirements.txt` to install the necessary packages. Additionally you will need [PyTorch](https://pytorch.org/get-started/locally/).
+Run `pip install -r requirements.txt` to install the necessary packages. Additionally you will
+need [PyTorch](https://pytorch.org/get-started/locally/).
 
 A GPU is mandatory, but you don't necessarily need a high tier GPU if you only want to use the toolbox.
 
 ### Pretrained models
+
 Download the latest [here](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/Pretrained-models).
 
 ### Preliminary
+
 Before you download any dataset, you can begin by testing your configuration with:
 
 `python demo_cli.py`
@@ -441,25 +453,38 @@ Before you download any dataset, you can begin by testing your configuration wit
 If all tests pass, you're good to go.
 
 ### Datasets
-For playing with the toolbox alone, I only recommend downloading [`LibriSpeech/train-clean-100`](http://www.openslr.org/resources/12/train-clean-100.tar.gz). Extract the contents as `<datasets_root>/LibriSpeech/train-clean-100` where `<datasets_root>` is a directory of your choosing. Other datasets are supported in the toolbox, see [here](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/Training#datasets). You're free not to download any dataset, but then you will need your own data as audio files or you will have to record it with the toolbox.
+
+For playing with the toolbox alone, I only recommend
+downloading [`LibriSpeech/train-clean-100`](http://www.openslr.org/resources/12/train-clean-100.tar.gz). Extract the
+contents as `<datasets_root>/LibriSpeech/train-clean-100` where `<datasets_root>` is a directory of your choosing. Other
+datasets are supported in the toolbox,
+see [here](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/Training#datasets). You're free not to download any
+dataset, but then you will need your own data as audio files or you will have to record it with the toolbox.
 
 ### Toolbox
+
 You can then try the toolbox:
 
 `python demo_toolbox.py -d <datasets_root>`  
 or  
-`python demo_toolbox.py`  
+`python demo_toolbox.py`
 
-depending on whether you downloaded any datasets. If you are running an X-server or if you have the error `Aborted (core dumped)`, see [this issue](https://github.com/CorentinJ/Real-Time-Voice-Cloning/issues/11#issuecomment-504733590).
+depending on whether you downloaded any datasets. If you are running an X-server or if you have the
+error `Aborted (core dumped)`,
+see [this issue](https://github.com/CorentinJ/Real-Time-Voice-Cloning/issues/11#issuecomment-504733590).
 
 ## Wiki
+
 - **How it all works** (coming soon!)
 - [**Training models yourself**](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/Training)
-- **Training with other data/languages** (coming soon! - see [here](https://github.com/CorentinJ/Real-Time-Voice-Cloning/issues/30#issuecomment-507864097) for now)
-- [**TODO and planned features**](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/TODO-&-planned-features) 
+- **Training with other data/languages** (coming soon! -
+  see [here](https://github.com/CorentinJ/Real-Time-Voice-Cloning/issues/30#issuecomment-507864097) for now)
+- [**TODO and planned features**](https://github.com/CorentinJ/Real-Time-Voice-Cloning/wiki/TODO-&-planned-features)
 
 ## Contribution
-Feel free to open issues or PRs for any problem you may encounter, typos that you see or aspects that are confusing. Contributions are welcome, open an issue or email me if you have something you want to work on.
+
+Feel free to open issues or PRs for any problem you may encounter, typos that you see or aspects that are confusing.
+Contributions are welcome, open an issue or email me if you have something you want to work on.
 
 ## 历史版本
 

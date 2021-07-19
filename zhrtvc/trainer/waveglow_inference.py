@@ -6,7 +6,6 @@
 waveglow_inference
 """
 import json
-import logging
 import os
 import sys
 from argparse import ArgumentParser
@@ -19,8 +18,9 @@ from numpy.random import choice
 from scipy.io import wavfile
 from tqdm import tqdm
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(Path(__file__).stem)
+# import logging
+# logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(Path(__file__).stem)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 

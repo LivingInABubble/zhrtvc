@@ -1,19 +1,22 @@
-from synthesizer.utils.text import symbols
-from synthesizer.utils.text import sequence_to_text
-from synthesizer.hparams import hparams_debug_string
+import json
+import os
+import time
+import traceback
+from datetime import datetime
+
+import numpy as np
+import tensorflow as tf
+from aukit.audio_griffinlim import inv_linear_spectrogram, save_wav
+from phkit.chinese import symbol_chinese as symbols
+from tqdm import tqdm
+
+from synthesizer import infolog
 from synthesizer.feeder import Feeder
+from synthesizer.hparams import hparams_debug_string
 from synthesizer.models import create_model
 from synthesizer.utils import ValueWindow, plot, audio
-from synthesizer import infolog
+from synthesizer.utils.text import sequence_to_text
 from utils.argutils import args2dict
-from datetime import datetime
-from tqdm import tqdm
-import tensorflow as tf
-import numpy as np
-import traceback
-import time
-import os
-import json
 
 log = infolog.log
 
@@ -277,10 +280,9 @@ def train(log_dir, args, hparams):
                             linear_losses.append(linear_loss)
                         linear_loss = sum(linear_losses) / len(linear_losses)
 
-                        wav = audio.inv_linear_spectrogram(lin_p.T, hparams)
-                        audio.save_wav(wav, os.path.join(eval_wav_dir,
-                                                         "step-{}-eval-wave-from-linear.wav".format(
-                                                             step)), sr=hparams.sample_rate)
+                        wav = inv_linear_spectrogram(lin_p.T, hparams)
+                        save_wav(wav, os.path.join(eval_wav_dir, "step-{}-eval-wave-from-linear.wav".format(step)),
+                                 sr=hparams.sample_rate)
 
                     else:
                         for i in tqdm(range(feeder.test_steps)):
@@ -308,9 +310,8 @@ def train(log_dir, args, hparams):
                     log("Saving eval log to {}..".format(eval_dir))
                     # Save some log to monitor model improvement on same unseen sequence
                     wav = audio.inv_mel_spectrogram(mel_p.T, hparams)
-                    audio.save_wav(wav, os.path.join(eval_wav_dir,
-                                                     "step-{}-eval-wave-from-mel.wav".format(step)),
-                                   sr=hparams.sample_rate)
+                    save_wav(wav, os.path.join(eval_wav_dir, "step-{}-eval-wave-from-mel.wav".format(step)),
+                             sr=hparams.sample_rate)
 
                     plot.plot_alignment(align, os.path.join(eval_plot_dir,
                                                             "step-{}-eval-align.png".format(step)),
@@ -363,9 +364,8 @@ def train(log_dir, args, hparams):
 
                     # save griffin lim inverted wav for debug (mel -> wav)
                     wav = audio.inv_mel_spectrogram(mel_prediction.T, hparams)
-                    audio.save_wav(wav,
-                                   os.path.join(wav_dir, "step-{}-wave-from-mel.wav".format(step)),
-                                   sr=hparams.sample_rate)
+                    save_wav(wav, os.path.join(wav_dir, "step-{}-wave-from-mel.wav".format(step)),
+                             sr=hparams.sample_rate)
 
                     # save alignment plot to disk (control purposes)
                     plot.plot_alignment(alignment,

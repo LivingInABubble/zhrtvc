@@ -1,22 +1,17 @@
-import numpy as np
 # from scipy.io.wavfile import read
-import torch
-import librosa
 import os
 
-############################ 用aukit的默认参数 #############################
-
+import librosa
 import numpy as np
+import torch
+from aukit.audio_griffinlim import default_hparams
+from aukit.audio_griffinlim import inv_mel_spectrogram
+from aukit.audio_griffinlim import load_wav
+from aukit.audio_io import Dict2Obj
 from aukit.audio_spectrogram import linear_spectrogram as linearspectrogram
 from aukit.audio_spectrogram import mel_spectrogram as melspectrogram
-from aukit.audio_io import Dict2Obj
-from aukit.audio_griffinlim import load_wav, save_wav, save_wavenet_wav, preemphasis, inv_preemphasis
-from aukit.audio_griffinlim import start_and_end_indices, get_hop_size
-from aukit.audio_griffinlim import inv_linear_spectrogram, inv_mel_spectrogram
-from aukit.audio_griffinlim import librosa_pad_lr
-from aukit.audio_griffinlim import default_hparams
 
-
+# 用aukit的默认参数
 
 _sr = 22050
 my_hp = {
@@ -43,15 +38,15 @@ synthesizer_hparams = Dict2Obj(synthesizer_hparams)
 def melspectrogram_torch(wav, hparams=None):
     """mel_output: torch.FloatTensor of shape (B, n_mel_channels, T)"""
     mel = melspectrogram(wav, hparams)
-    mel_output = torch.from_numpy(mel).type(torch.FloatTensor)
-    return mel_output
+
+    return torch.from_numpy(mel).type(torch.FloatTensor)
 
 
 def linearspectrogram_torch(wav, hparams=None):
     """spec_output: torch.FloatTensor of shape (B, n_spec_channels, T)"""
     spec = linearspectrogram(wav, hparams)
-    spec_output = torch.from_numpy(spec).type(torch.FloatTensor)
-    return spec_output
+
+    return torch.from_numpy(spec).type(torch.FloatTensor)
 
 
 def inv_melspectrogram(spec):
@@ -62,7 +57,7 @@ def inv_linearspectrogram(spec):
     return inv_mel_spectrogram(spec, hparams=synthesizer_hparams)
 
 
-########################### 用aukit的默认参数 #############################
+# 用aukit的默认参数
 
 _device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -82,12 +77,13 @@ def read(fpath, sr_force=None):
 def get_mask_from_lengths(lengths):
     max_len = torch.max(lengths).item()
     ids = torch.arange(0, max_len, out=torch.LongTensor(max_len).to(_device))  # out=torch.cuda.LongTensor(max_len)
-    mask = (ids < lengths.unsqueeze(1))  # .bool()
-    return mask
+
+    return ids < lengths.unsqueeze(1)  # .bool()
 
 
 def load_wav_to_torch(full_path, sr_force=None):
     sampling_rate, data = read(full_path, sr_force=sr_force)
+
     return torch.FloatTensor(data.astype(np.float32)), sampling_rate
 
 
@@ -99,13 +95,15 @@ def load_filepaths_and_text(filename, split="|"):
             tmp = line.strip().split(split)
             if len(tmp) == 2:
                 tmp.append('0')
+
             tmp[0] = os.path.join(curdir, tmp[0])
             filepaths_and_text.append(tmp)
+
     return filepaths_and_text
 
 
 def load_filepaths_and_text_train(filename, split="|"):
-    curdir = os.path.dirname(os.path.abspath(filename))
+    # curdir = os.path.dirname(os.path.abspath(filename))
     filepaths_and_text = []
     with open(filename, encoding='utf-8') as f:
         for line in f:
@@ -114,6 +112,7 @@ def load_filepaths_and_text_train(filename, split="|"):
             # dirname, basename = os.path.split(tmp[0])
             # tmp[0] = os.path.join(curdir, dirname, 'npy', basename)
             filepaths_and_text.append(tmp)
+
     return filepaths_and_text
 
 

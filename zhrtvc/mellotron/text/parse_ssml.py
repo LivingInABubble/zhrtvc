@@ -10,8 +10,8 @@ SSML格式：
 3.样例：
 <speak><phoneme alphabet="py" ph="gan4 ma2 a5 ni3">干嘛啊你</phoneme><phoneme alphabet="py" ph="you4 lai2">又来</phoneme><phoneme alphabet="py" ph="gou1 da5 shei2">勾搭谁</phoneme>。</speak>
 """
-from pathlib import Path
 import logging
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(Path(__file__).stem)
@@ -23,6 +23,7 @@ _speak_re = re.compile(r'^<speak>(.+?)</speak>$')
 _phoneme_re = re.compile(r'<phoneme alphabet="py" ph="(.+?)">(.+?)</phoneme>')
 _none_pinyin = None
 _default_errors = lambda x: x
+
 
 def convert_ssml(ssml_text, errors=None):
     """把ssml格式的文本转为汉字拼音列表。"""
@@ -103,6 +104,7 @@ if __name__ == "__main__":
     print(outs)
 
     from phkit.chinese import text_to_sequence, sequence_to_text
+
     zp_lst = convert_ssml(ssml_text)
     pin_text = ' '.join([p for z, p in zp_lst])
     seq = text_to_sequence(pin_text, cleaner_names='pinyin')

@@ -1,49 +1,43 @@
-from pathlib import Path
-import logging
-import sys
-import os
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(Path(__file__).stem)
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import tensorflow as tf
-
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config)
-
-from encoder.params_model import model_embedding_size as speaker_embedding_size
-from utils.argutils import print_args
-from synthesizer.inference import Synthesizer
-from synthesizer import hparams
-from synthesizer.utils import audio
-from encoder import inference as encoder
-# from vocoder import inference as vocoder
-from pathlib import Path
-import numpy as np
-import librosa
-import argparse
-import time
-import torch
-import sys
-import shutil
 import json
+import logging
+import os
+import shutil
+import sys
+import time
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from pathlib import Path
 
 import aukit
-from utils.texthelper import xinqing_texts
+import numpy as np
+# import tensorflow as tf
+import torch
 
-example_texts = xinqing_texts
 
-sample_dir = Path(r"../data/files")
-reference_paths = [w for w in sorted(sample_dir.glob('*.wav'))]
+def main():
+    # logging.basicConfig(level=logging.INFO)
+    # logger = logging.getLogger(Path(__file__).stem)
 
-if __name__ == '__main__':
-    ## Info & args
-    parser = argparse.ArgumentParser(
-        description="命令行执行的Demo。",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    from encoder.params_model import model_embedding_size as speaker_embedding_size
+    from utils.argutils import print_args
+    from synthesizer.inference import Synthesizer
+    from synthesizer.utils import audio
+    from encoder import inference as encoder
+    # from vocoder import inference as vocoder
+    from utils.texthelper import xinqing_texts
+
+    # config = tf.ConfigProto()
+    # config.gpu_options.allow_growth = True
+    # sess = tf.Session(config=config)
+
+    example_texts = xinqing_texts
+
+    sample_dir = Path(r"../data/files")
+    reference_paths = [w for w in sorted(sample_dir.glob('*.wav'))]
+
+    # Info & args
+    parser = ArgumentParser(description="命令行执行的Demo。", formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument("-e", "--enc_model_fpath", type=Path,
                         default="../models/encoder/saved_models/ge2e_pretrained.pt",
                         help="Path to a saved encoder")
@@ -53,20 +47,17 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--voc_model_fpath", type=Path,
                         default="../models/vocoder/saved_models/melgan/melgan_multi_speaker.pt",
                         help="Path to a saved vocoder")
-    parser.add_argument("-o", "--out_dir", type=Path,
-                        default="../data/outs",
-                        help="Path to a saved vocoder")
-    parser.add_argument("--low_mem", action="store_true", help= \
-        "If True, the memory used by the synthesizer will be freed after each use. Adds large "
-        "overhead but allows to save some GPU memory for lower-end GPUs.")
-    parser.add_argument("--no_sound", action="store_true", help= \
-        "If True, audio won't be played.")
+    parser.add_argument("-o", "--out_dir", type=Path, default="../data/outs", help="Path to a saved vocoder")
+    parser.add_argument("--low_mem", action="store_true",
+                        help="If True, the memory used by the synthesizer will be freed after each use. "
+                             "Adds large overhead but allows to save some GPU memory for lower-end GPUs.")
+    parser.add_argument("--no_sound", action="store_true", help="If True, audio won't be played.")
     args = parser.parse_args()
     print_args(args, parser)
     # if not args.no_sound:
     #     import sounddevice as sd
 
-    ## Print some environment information (for debugging purposes)
+    # Print some environment information (for debugging purposes)
     print("Running a test of your configuration...\n")
     if torch.cuda.is_available():
         device_id = torch.cuda.current_device()
@@ -80,16 +71,16 @@ if __name__ == '__main__':
                gpu_properties.minor,
                gpu_properties.total_memory / 1e9))
 
-    ## Load the models one by one.
+    # Load the models one by one.
     print("Preparing the encoder, the synthesizer and the vocoder...")
     encoder.load_model(args.enc_model_fpath, device='cpu')
 
     # 从模型目录导入hparams
-    hp_path = args.syn_model_dir.parent.joinpath("metas", "hparams.json")    # load from trained models
+    hp_path = args.syn_model_dir.parent.joinpath("metas", "hparams.json")  # load from trained models
     if hp_path.exists():
         hparams = aukit.Dict2Obj(json.load(open(hp_path, encoding="utf8")))
         print('hparams:')
-        print(json.dumps({k:v for k, v in hparams.items()}, ensure_ascii=False, indent=4))
+        print(json.dumps({k: v for k, v in hparams.items()}, ensure_ascii=False, indent=4))
     else:
         hparams = None
         print('hparams:', hparams)
@@ -98,7 +89,7 @@ if __name__ == '__main__':
 
     # vocoder.load_model(args.voc_model_fpath)
 
-    ## Run a test
+    # Run a test
     print("Testing your configuration with small inputs.")
     print("\tTesting the encoder...")
     encoder.embed_utterance(np.zeros(encoder.sampling_rate))
@@ -110,9 +101,9 @@ if __name__ == '__main__':
     mels = synthesizer.synthesize_spectrograms(texts, embeds)
 
     mel = np.concatenate(mels, axis=1)
-    no_action = lambda *args: None
+    # no_action = lambda *args: None
 
-    generated_wav = audio.inv_melspectrogram(mel, hparams=audio.melgan_hparams)
+    audio.inv_melspectrogram(mel, hparams=audio.melgan_hparams)
     print("All test passed! You can now synthesize speech.\n\n")
 
     print("Interactive generation loop")
@@ -135,7 +126,7 @@ if __name__ == '__main__':
             embed = encoder.embed_utterance(preprocessed_wav)
             print("Created the embedding")
 
-            ## Generating the spectrogram
+            # Generating the spectrogram
             text = input("Write a sentence (+-20 words) to be synthesized:\n")
 
             if not text.strip():
@@ -150,7 +141,7 @@ if __name__ == '__main__':
             spec = specs[0]
             print("Created the mel spectrogram")
 
-            ## Generating the waveform
+            # Generating the waveform
             print("Synthesizing the waveform:")
 
             generated_wav = audio.inv_melspectrogram(spec, hparams=audio.melgan_hparams)
@@ -183,3 +174,7 @@ if __name__ == '__main__':
         except Exception as e:
             print("Caught exception: %s" % repr(e))
             print("Restarting\n")
+
+
+if __name__ == '__main__':
+    main()

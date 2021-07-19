@@ -4,8 +4,8 @@
 # date: 2020/4/14
 """
 """
-from pathlib import Path
 import logging
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(Path(__file__).stem)
@@ -13,14 +13,9 @@ logger = logging.getLogger(Path(__file__).stem)
 from pathlib import Path
 from functools import partial
 from multiprocessing.pool import Pool
-from matplotlib import pyplot as plt
 from tqdm import tqdm
-import collections as clt
-import os
-import re
 import json
 import numpy as np
-import shutil
 
 from data_utils import TextMelLoader
 from hparams import create_hparams
@@ -96,12 +91,13 @@ def process_many(n_processes, skip_existing=False):
 
 if __name__ == "__main__":
     import argparse
+
     try:
         from setproctitle import setproctitle
+
         setproctitle('zhrtvc-mellotron-preprocess')
     except ImportError:
         pass
-
 
     parser = argparse.ArgumentParser(
         description="预处理训练数据，保存为numpy的npy格式，训练的时候直接从本地load数据。",

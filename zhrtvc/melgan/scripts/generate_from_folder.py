@@ -1,10 +1,11 @@
-from melgan.mel2wav import MelVocoder
-
-from pathlib import Path
-from tqdm import tqdm
 import argparse
+from pathlib import Path
+
 import librosa
 import torch
+from tqdm import tqdm
+
+from melgan.mel2wav import MelVocoder
 
 
 def parse_args():
